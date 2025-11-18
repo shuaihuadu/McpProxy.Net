@@ -1,13 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="IdeaTech.CandyBox" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<PackageReference Include="IdeaTech.CandyBox" />
+		<PackageReference Include="ModelContextProtocol.Core" />
+	</ItemGroup>
 </Project>
