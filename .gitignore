@@ -485,3 +485,4 @@ playwright-report/
 # python devcontainer
 /python/.devcontainer/*
 /doc/dev_prompts/prompt.md
+/src/McpProxy.Server/mcp.json
