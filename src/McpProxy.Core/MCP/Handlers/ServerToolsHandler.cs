@@ -1,118 +1,60 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿namespace McpProxy;
 
-namespace McpProxy;
-
-public class ServerToolsHandler : BaseMcpToolsHandler
+/// <summary>
+/// ServerToolsHandler 从mcp.json配置的MCP服务器加载工具并通过MCP服务器公开工具
+/// </summary>
+public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscoveryStrategy, ILogger<ServerToolsHandler> logger) : BaseMcpToolsHandler(logger)
 {
-    private readonly Dictionary<string, List<Tool>> _cachedToolLists = new(StringComparer.OrdinalIgnoreCase);
-    private readonly IServiceProvider _services;
+    private readonly IMcpServerDiscoveryStrategy _serverDiscoveryStrategy = serverDiscoveryStrategy;
+    private readonly SemaphoreSlim _initializationSemaphore = new(1, 1);
 
-    public ServerToolsHandler(IServiceProvider services, ILogger<ServerToolsHandler> logger) : base(services, logger)
-    {
-        this._services = services;
-    }
+    private readonly Dictionary<string, (string ServerName, McpClient Client)> _toolClientMap = [];
+    private readonly List<McpClient> _discoveredClients = [];
 
+    private bool _isInitialized = false;
+
+    /// <summary>
+    /// 获取或设置创建MCP客户端时使用的客户端选项
+    /// </summary>
+    public McpClientOptions ClientOptions { get; set; } = new McpClientOptions();
+
+    /// <inheritdoc/>
     public override async ValueTask<ListToolsResult> ListToolsAsync(RequestContext<ListToolsRequestParams> request, CancellationToken cancellationToken = default)
     {
-        IEnumerable<IMcpServerProvider> servers = this._services.GetServices<IMcpServerProvider>();
+        await this.InitializeAsync(cancellationToken);
 
-        ListToolsResult listToolsResult = new()
+        ListToolsResult allToolResult = new()
         {
-            Tools = [],
+            Tools = []
         };
 
-        foreach (IMcpServerProvider server in servers)
+        foreach (McpClient mcpClient in this._discoveredClients)
         {
-            McpServerMetadata metadata = server.CreateMetadata().FirstOrDefault();
+            IList<McpClientTool> toolResult = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken);
 
-            Tool tool = new()
+            IEnumerable<Tool> filteredTools = toolResult
+                .Select(t => t.ProtocolTool);
+
+            foreach (Tool tool in filteredTools)
             {
-                Name = metadata.Name,
-                Description = metadata.Description,
-            };
-
-            // TODO Tool Annotations
-
-            listToolsResult.Tools.Add(tool);
+                allToolResult.Tools.Add(tool);
+            }
         }
 
-        return listToolsResult;
+        return allToolResult;
     }
 
+    /// <inheritdoc/>
     public override async ValueTask<CallToolResult> CallToolsAsync(RequestContext<CallToolRequestParams> request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Params?.Name))
+        if (request.Params == null)
         {
-            throw new ArgumentNullException(nameof(request.Params.Name), "Tool name cannot be null or empty.");
-        }
-
-        string tool = request.Params.Name;
-
-        IReadOnlyDictionary<string, JsonElement>? args = request.Params.Arguments;
-
-        string? command = null;
-
-        if (args is not null)
-        {
-            if (args.TryGetValue("command", out var commendElement) && commendElement.ValueKind == JsonValueKind.String)
+            TextContentBlock content = new()
             {
-                command = commendElement.GetString();
-            }
-        }
-
-        try
-        {
-            if (!string.IsNullOrEmpty(tool) && !string.IsNullOrEmpty(command))
-            {
-                var toolParams = GetParametersDictionary(request);
-                return await InvokeChildToolAsync(request, tool, command, toolParams, cancellationToken);
-            }
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError(ex, "Key not found while calling tool: {Tool}", tool);
-
-            return new CallToolResult
-            {
-                Content =
-                [
-                    new TextContentBlock {
-                        Text = $"""
-                            The tool '{tool}.{command}' was not found or does not support the specified command.
-                            Please ensure the tool name and command are correct.
-                            If you want to learn about available tools, run again with the "learn=true" argument.
-                        """
-                    }
-                ],
-                IsError = true
-            };
-        }
-
-        return new CallToolResult
-        {
-            Content =
-            [
-                new TextContentBlock {
-                Text = """
-                    The "command" parameters are required when not learning
-                    Run again with the "learn" argument to get a list of available tools and their parameters.
-                    To learn about a specific tool, use the "tool" argument with the name of the tool.
-                    """
-                }
-            ]
-        };
-    }
-
-    private async Task<CallToolResult> InvokeChildToolAsync(RequestContext<CallToolRequestParams> request, string tool, string command, Dictionary<string, object?> parameters, CancellationToken cancellationToken = default)
-    {
-        if (request.Params is null)
-        {
-            var content = new TextContentBlock
-            {
-                Text = "Cannot call tools with null parameters.",
+                Text = "Cannot call tools with null context parameters.",
             };
 
-            this._logger.LogWarning(content.Text);
+            _logger.LogWarning(content.Text);
 
             return new CallToolResult
             {
@@ -121,155 +63,131 @@ public class ServerToolsHandler : BaseMcpToolsHandler
             };
         }
 
+        // 初始化工具客户端映射，如果尚未初始化
+        await this.InitializeAsync(cancellationToken);
 
-        IEnumerable<IMcpServerProvider> servers = this._services.GetServices<IMcpServerProvider>();
+        if (!_toolClientMap.TryGetValue(request.Params.Name, out var toolClient) || toolClient.Client is null)
+        {
+            TextContentBlock content = new()
+            {
+                Text = $"Tool '{request.Params.Name}' not found in the configured server.",
+            };
 
-        McpClient client;
+            _logger.LogWarning(content.Text);
+
+            return new CallToolResult
+            {
+                Content = [content],
+                IsError = true
+            };
+        }
+
+        Dictionary<string, object?> parameters = TransformArgumentsToDictionary(request.Params.Arguments);
+
+        return await toolClient.Client.CallToolAsync(toolName: request.Params.Name, parameters, cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// 将工具调用参数转换为参数字典
+    /// 这个转换是因为McpClientExtensions.CallToolAsync期望参数为Dictionary&lt;string, object?&gt;
+    /// </summary>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    private static Dictionary<string, object?> TransformArgumentsToDictionary(IReadOnlyDictionary<string, JsonElement>? args)
+    {
+        if (args is null)
+        {
+            return [];
+        }
+
+        return args.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value);
+    }
+
+    /// <summary>
+    /// 初始化工具客户端映射，通过发现服务器并填充工具
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌</param>
+    private async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        if (this._isInitialized)
+        {
+            return;
+        }
+
+        await this._initializationSemaphore.WaitAsync(cancellationToken);
 
         try
         {
-            McpClientOptions clientOptions = CreateClientOptions(request.Server);
-
-            IMcpServerProvider mcpServerProvider = await this.FindServerProviderAsync(tool, cancellationToken);
-
-            client = await mcpServerProvider.GetOrCreateClientAsync(tool, clientOptions, cancellationToken);
-
-            if (client is null)
+            // 双重检查：在获取锁后再次确认仍未初始化
+            if (_isInitialized)
             {
-                this._logger.LogError("Failed to get provider client for tool: {Tool}", tool);
-
-                return default;
+                return;
             }
 
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception thrown while getting provider client for tool: {Tool}", tool);
+            IEnumerable<IMcpServerProvider> servers = await this._serverDiscoveryStrategy.DiscoverServersAsync(cancellationToken);
 
-            throw;
-        }
-
-        try
-        {
-            //await NotifyProgressAsync(request, $"Calling {tool} {command}...", cancellationToken);
-
-            CallToolResult callToolResult = await client.CallToolAsync(command, parameters, cancellationToken: cancellationToken);
-
-            if (callToolResult.IsError is true)
+            foreach (IMcpServerProvider server in servers)
             {
-                _logger.LogWarning("Tool {Tool} command {Command} returned an error.", tool, command);
-            }
+                McpServerMetadata serverMetadata = server.CreateMetadata();
 
-            foreach (var content in callToolResult.Content)
-            {
-                TextContentBlock? textContent = content as TextContentBlock;
+                McpClient? mcpClient;
 
-                if (textContent == null || string.IsNullOrWhiteSpace(textContent.Text))
+                try
                 {
+                    mcpClient = await this._serverDiscoveryStrategy.GetOrCreateClientAsync(serverMetadata.Name, ClientOptions, cancellationToken);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    _logger.LogWarning("Failed to create client for provider {ProviderName}: {Error}", serverMetadata.Name, ex.Message);
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Failed to start client for provider {ProviderName}: {Error}", serverMetadata.Name, ex.Message);
                     continue;
                 }
 
-                if (textContent.Text.Contains("Missing required options", StringComparison.OrdinalIgnoreCase))
+                if (mcpClient is null)
                 {
-                    string childToolSpecJson = await GetChildToolJsonAsync(request, tool, command, cancellationToken);
+                    _logger.LogWarning("Failed to get MCP client for provider {ProviderName}.", serverMetadata.Name);
+                    continue;
+                }
 
-                    _logger.LogWarning("Tool {Tool} command {Command} requires additional parameters.", tool, command);
+                // 缓存发现的MCP客户端
+                this._discoveredClients.Add(mcpClient);
 
-                    CallToolResult finalResult = new CallToolResult
-                    {
-                        Content =
-                        [
-                            new TextContentBlock{
-                                    Text = $"""
-                                        The '{command}' command is missing required parameters.
+                IEnumerable<McpClientTool> clientTools = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken);
 
-                                        - Review the following command spec and identify the required arguments from the input schema.
-                                        - Omit any arguments that are not required or do not apply to your use case.
-                                        - Wrap all command arguments into the root "parameters" argument.
-                                        - If required data is missing infer the data from your context or prompt the user as needed.
-                                        - Run the tool again with the "command" and root "parameters" object.
+                IEnumerable<Tool> tools = clientTools.Select(t => t.ProtocolTool);
 
-                                        Command Spec:
-                                        {childToolSpecJson}
-                                        """
-                            }
-                        ]
-                    };
-
-                    foreach (ContentBlock contentBlock in callToolResult.Content)
-                    {
-                        finalResult.Content.Add(contentBlock);
-                    }
-
-                    return finalResult;
+                foreach (Tool tool in tools)
+                {
+                    this._toolClientMap[tool.Name] = (serverMetadata.Name, mcpClient);
                 }
             }
 
-            return callToolResult;
+            this._isInitialized = true;
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.LogError(ex, "Exception thrown while calling tool: {Tool}, command: {Command}", tool, command);
-            return new CallToolResult
-            {
-                Content =
-                [
-                    new TextContentBlock {
-                        Text = $"""
-                            There was an error finding or calling tool and command.
-                            Failed to call tool: {tool}, command: {command}
-                            Error: {ex.Message}
-
-                            Run again with the "learn=true" to get a list of available commands and their parameters.
-                            """
-                    }
-                ]
-            };
+            this._initializationSemaphore.Release();
         }
     }
 
-    private async Task<List<Tool>> GetChildToolListAsync(RequestContext<CallToolRequestParams> request, string tool, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// 释放此工具加载器拥有的资源
+    /// 清空集合并释放初始化信号量
+    /// 注意：MCP客户端由发现策略拥有，不在此处释放
+    /// </summary>
+    protected override async ValueTask DisposeAsyncCore()
     {
-        if (this._cachedToolLists.TryGetValue(tool, out var cachedList))
-        {
-            return cachedList;
-        }
+        // 只释放拥有的资源，而不是MCP客户端
+        this._initializationSemaphore?.Dispose();
 
-        if (string.IsNullOrWhiteSpace(request.Params?.Name))
-        {
-            throw new ArgumentNullException(nameof(request.Params.Name), "Tool name cannot be null or empty.");
-        }
+        // 清理对客户端的引用
+        this._discoveredClients.Clear();
+        this._toolClientMap.Clear();
 
-        McpClientOptions clientOptions = CreateClientOptions(request.Server);
-
-        IMcpServerProvider mcpServerProvider = await this.FindServerProviderAsync(tool, cancellationToken);
-
-        McpClient client = await mcpServerProvider.GetOrCreateClientAsync(tool, clientOptions, cancellationToken);
-
-        if (client is null)
-        {
-            return [];
-        }
-
-        IList<McpClientTool> listTools = await client.ListToolsAsync(cancellationToken: cancellationToken);
-
-        if (listTools is null)
-        {
-            _logger.LogWarning("No tools found for tool: {Tool}", tool);
-            return [];
-        }
-
-        List<Tool> tools = [.. listTools.Select(t => t.ProtocolTool)];
-
-        this._cachedToolLists[tool] = tools;
-
-        return tools;
-    }
-
-    private async Task<string> GetChildToolJsonAsync(RequestContext<CallToolRequestParams> request, string toolName, string commandName, CancellationToken cancellationToken = default)
-    {
-        List<Tool> tools = await GetChildToolListAsync(request, toolName, cancellationToken);
-
-        return JsonSerializer.Serialize(tools);
+        await ValueTask.CompletedTask;
     }
 }

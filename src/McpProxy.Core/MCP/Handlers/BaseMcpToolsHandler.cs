@@ -1,11 +1,19 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿namespace McpProxy;
 
-namespace McpProxy;
-
-public abstract class BaseMcpToolsHandler : IMcpToolsHandler
+/// <summary>
+/// MCP Tools处理的的基类，提供通用功能，包括释放模式。
+/// </summary>
+/// <param name="logger">日志记录器</param>
+public abstract class BaseMcpToolsHandler(ILogger logger) : IMcpToolsHandler
 {
-    protected readonly IServiceProvider _services;
-    protected readonly ILogger _logger;
+    /// <summary>
+    /// 日志记录器
+    /// </summary>
+    protected readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+    /// <summary>
+    /// 缓存的空JSON对象以避免重复解析
+    /// </summary>
     protected static readonly JsonElement EmptyJsonObject;
 
     static BaseMcpToolsHandler()
@@ -15,18 +23,17 @@ public abstract class BaseMcpToolsHandler : IMcpToolsHandler
         EmptyJsonObject = doc.RootElement.Clone();
     }
 
-    protected BaseMcpToolsHandler(IServiceProvider services, ILogger logger)
-    {
-        this._services = services;
-        this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
     private bool _disposed = false;
 
+    /// <inheritdoc/>
     public abstract ValueTask<ListToolsResult> ListToolsAsync(RequestContext<ListToolsRequestParams> request, CancellationToken cancellationToken = default);
 
+    /// <inheritdoc/>
     public abstract ValueTask<CallToolResult> CallToolsAsync(RequestContext<CallToolRequestParams> request, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Disposes resources owned by this tool loader with double disposal protection.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
@@ -48,11 +55,27 @@ public abstract class BaseMcpToolsHandler : IMcpToolsHandler
         }
     }
 
+    /// <summary>
+    /// Override this method in derived classes to implement disposal logic.
+    /// This method is called exactly once during disposal.
+    /// </summary>
+    /// <returns>A task representing the asynchronous disposal operation.</returns>
     protected virtual ValueTask DisposeAsyncCore()
     {
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>
+    /// Creates a new instance of <see cref="McpClientOptions"/> configured with handlers and client information based
+    /// on the specified server's capabilities.
+    /// </summary>
+    /// <remarks>The returned client options will include handlers for sampling and elicitation if the
+    /// corresponding capabilities are present in the server. Handlers are set to invoke the server's asynchronous
+    /// methods for sampling and elicitation as appropriate.</remarks>
+    /// <param name="server">The server from which client capabilities and information are retrieved to configure the client options. Cannot
+    /// be null.</param>
+    /// <returns>A <see cref="McpClientOptions"/> instance containing handlers and client information derived from the provided
+    /// server.</returns>
     protected McpClientOptions CreateClientOptions(McpServer server)
     {
         McpClientHandlers handlers = new();
@@ -83,47 +106,5 @@ public abstract class BaseMcpToolsHandler : IMcpToolsHandler
         };
 
         return clientOptions;
-    }
-
-    protected static JsonElement GetParametersJsonElement(RequestContext<CallToolRequestParams> request)
-    {
-        IReadOnlyDictionary<string, JsonElement>? args = request.Params?.Arguments;
-
-        if (args is not null && args.TryGetValue("parameters", out var parametersElement) && parametersElement.ValueKind == JsonValueKind.Object)
-        {
-            return parametersElement;
-        }
-
-        return EmptyJsonObject;
-    }
-
-    protected static Dictionary<string, object?> GetParametersDictionary(RequestContext<CallToolRequestParams> request)
-    {
-        JsonElement parameterElement = GetParametersJsonElement(request);
-
-        return parameterElement.EnumerateObject().ToDictionary(prop => prop.Name, prop => (object?)prop.Value);
-    }
-
-    /// <inheritdoc/>
-    protected async Task<IMcpServerProvider> FindServerProviderAsync(string name, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(name, nameof(name));
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentNullException(nameof(name), "Server name cannot be null or empty.");
-        }
-
-        IEnumerable<IMcpServerProvider> serverProviders = this._services.GetServices<IMcpServerProvider>();
-
-        foreach (var serverProvider in serverProviders)
-        {
-            var metadata = serverProvider.CreateMetadata();
-            if (metadata.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
-            {
-                return serverProvider;
-            }
-        }
-
-        throw new KeyNotFoundException($"No MCP server found with the name '{name}'.");
     }
 }

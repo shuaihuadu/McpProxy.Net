@@ -36,7 +36,7 @@ public class McpRuntime : IMcpRuntime
 
         try
         {
-            return await this._toolsHandler.CallToolsAsync(request, cancellationToken).ConfigureAwait(false);
+            return await this._toolsHandler.CallToolsAsync(request, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
@@ -60,7 +60,7 @@ public class McpRuntime : IMcpRuntime
     {
         try
         {
-            ListToolsResult result = await this._toolsHandler.ListToolsAsync(request, cancellationToken).ConfigureAwait(false);
+            ListToolsResult result = await this._toolsHandler.ListToolsAsync(request, cancellationToken);
 
             return result;
         }

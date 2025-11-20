@@ -1,11 +1,30 @@
 ﻿namespace McpProxy;
 
 /// <summary>
-/// 服务器配置基类
+/// Contains configuration information for an MCP server defined in the mcp.json.
 /// </summary>
-public class NamedMcpServerOptions
+public class NamedMcpServerInfo
 {
     const int TimeoutDefault = 60;
+
+    /// <summary>
+    /// Gets or sets the name of the server, typically derived from the key in the configuration file.
+    /// This property is not serialized to/from JSON.
+    /// </summary>
+    [JsonIgnore]
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// Gets a description of the server's purpose or capabilities.
+    /// </summary>
+    [JsonPropertyName("description")]
+    public string? Description { get; init; }
+
+    /// <summary>
+    /// Gets the user-friendly title for the server.
+    /// </summary>
+    [JsonPropertyName("title")]
+    public string? Title { get; init; }
 
     /// <summary>
     /// 获取或设置服务器是否被禁用
@@ -24,7 +43,7 @@ public class NamedMcpServerOptions
     /// 获取或设置超时时间（秒）
     /// </summary>
     [JsonPropertyName("timeout")]
-    public int TimeoutSeconds { get; set; } = TimeoutDefault;
+    public int Timeout { get; set; } = TimeoutDefault;
 
     /// <summary>
     /// 获取或设置运行服务器的命令
@@ -37,43 +56,23 @@ public class NamedMcpServerOptions
     /// 获取或设置传递给服务器的命令行参数列表
     /// </summary>
     [JsonPropertyName("args")]
-    public IList<string>? Arguments { get; set; }
+    public IList<string>? Args { get; set; }
 
     /// <summary>
     /// 获取或设置传递给服务器的环境变量
     /// </summary>
     [JsonPropertyName("env")]
-    public IDictionary<string, string?>? EnvironmentVariables { get; }
+    public IDictionary<string, string?>? Env { get; set; }
 
     /// <summary>
     /// 获取或设置工作目录
     /// </summary>
     [JsonPropertyName("cwd")]
-    public string? WorkingDirectory { get; set; }
-
+    public string? Cwd { get; set; }
 
     [JsonPropertyName("url")]
     public string Url { get; set; }
 
     [JsonPropertyName("headers")]
     public Dictionary<string, string>? Headers { get; set; }
-
-    public StdioClientTransportOptions? ToStdioClientTransportOptions(string name)
-    {
-        if (this.Type == "stdio")
-        {
-            return new StdioClientTransportOptions
-            {
-                Name = name,
-                Command = this.Command,
-                Arguments = this.Arguments,
-                EnvironmentVariables = this.EnvironmentVariables,
-                WorkingDirectory = this.WorkingDirectory,
-                ShutdownTimeout = TimeSpan.FromSeconds(this.TimeoutSeconds),
-                // TODO StandardErrorLines
-            };
-        }
-
-        return default;
-    }
 }

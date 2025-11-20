@@ -1,50 +1,62 @@
 ﻿namespace McpProxy;
 
-public class NamedMcpServerProvider : IMcpServerProvider
+/// <summary>
+/// 提供基于命名MCP服务器配置的MCP服务器实现，只支持stdio传输机制
+/// </summary>
+/// <param name="id">MCP服务器的唯一标识</param>
+/// <param name="serverInfo">MCP服务器配置信息</param>
+public class NamedMcpServerProvider(string id, NamedMcpServerInfo serverInfo) : IMcpServerProvider
 {
-    private readonly ILoggerFactory _loggerFactory;
-    private readonly ILogger<NamedMcpServerProvider> _logger;
-    private readonly Dictionary<string, NamedMcpServerOptions> _options;
-    protected readonly Dictionary<string, McpClient> _clientCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly string _id = id;
+    private readonly NamedMcpServerInfo _serverInfo = serverInfo;
 
-    public NamedMcpServerProvider(ILoggerFactory loggerFactory, IOptions<Dictionary<string, NamedMcpServerOptions>> options)
+    /// <inheritdoc/>
+    public McpServerMetadata CreateMetadata()
     {
-        this._loggerFactory = loggerFactory;
-        this._logger = loggerFactory.CreateLogger<NamedMcpServerProvider>();
-        this._options = options.Value;
+        return new()
+        {
+            Id = this._id,
+            Name = this._serverInfo.Name ?? this._id,
+            Title = this._serverInfo.Title,
+            Description = this._serverInfo.Description ?? string.Empty
+        };
     }
 
-    public IEnumerable<McpServerMetadata> CreateMetadata()
+    /// <inheritdoc/>
+    public async Task<McpClient> CreateClientAsync(McpClientOptions clientOptions, CancellationToken cancellationToken = default)
     {
-        IList<McpServerMetadata> mcpServerMetadata = [];
+        //bool isStdioTransport = string.Equals(this._serverInfo.Type, TransportTypes.StdIo, StringComparison.OrdinalIgnoreCase)
+        //    || !string.IsNullOrWhiteSpace(this._serverInfo.Command);
 
-        foreach (var item in this._options)
+        if (string.IsNullOrWhiteSpace(_serverInfo.Command))
         {
-            McpServerMetadata metadata = new()
-            {
-                Id = item.Key,
-                Name = item.Key,
-                Title = item.Key,
-                Description = item.Key
-            };
-            mcpServerMetadata.Add(metadata);
+            throw new InvalidOperationException($"Named server '{_id}' does not have a valid command for stdio transport.");
         }
 
-        return mcpServerMetadata;
-    }
+        Dictionary<string, string?> environmentVariables = Environment.GetEnvironmentVariables()
+            .Cast<System.Collections.DictionaryEntry>()
+            .ToDictionary(e => (string)e.Key, e => (string?)e.Value);
 
-    public async Task<McpClient> GetOrCreateClientAsync(string name, McpClientOptions clientOptions, CancellationToken cancellationToken = default)
-    {
-        NamedMcpServerOptions? serverOptions = this._options.FirstOrDefault(s => string.Equals(s.Key, name, StringComparison.OrdinalIgnoreCase)).Value
-            ?? throw new InvalidOperationException($"The named server {name} not found in mcp.json");
+        if (_serverInfo.Env != null)
+        {
+            foreach (var kvp in _serverInfo.Env)
+            {
+                environmentVariables[kvp.Key] = kvp.Value;
+            }
+        }
 
-        // TODO HTTP / SSE TransportOptions support
+        StdioClientTransportOptions transportOptions = new()
+        {
+            Name = _id,
+            Command = _serverInfo.Command,
+            Arguments = _serverInfo.Args,
+            EnvironmentVariables = environmentVariables,
+            WorkingDirectory = _serverInfo.Cwd
+            // TODO StandardErrorLines
+        };
 
-        StdioClientTransportOptions? transportOptions = serverOptions.ToStdioClientTransportOptions(name)
-            ?? throw new InvalidOperationException($"Invalid configuration for server {name}");
+        StdioClientTransport clientTransport = new(transportOptions);
 
-        StdioClientTransport clientTransport = new(transportOptions, this._loggerFactory);
-
-        return await McpClient.CreateAsync(clientTransport, clientOptions, this._loggerFactory, cancellationToken).ConfigureAwait(false);
+        return await McpClient.CreateAsync(clientTransport, clientOptions, cancellationToken: cancellationToken);
     }
 }

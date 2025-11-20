@@ -10,11 +10,11 @@ builder.Configuration.AddJsonFile("mcp.json", optional: false, reloadOnChange: t
 
 builder.Services.AddSingleton<IMcpToolsHandler, ServerToolsHandler>();
 
-builder.Services.AddSingleton<IMcpServerProvider, NamedMcpServerProvider>();
+builder.Services.AddSingleton<IMcpServerDiscoveryStrategy, NamedMcpServerDiscoveryStrategy>();
 
 builder.Services.AddSingleton<IMcpRuntime, McpRuntime>();
 
-builder.Services.Configure<Dictionary<string, NamedMcpServerOptions>>(builder.Configuration.GetSection("servers"));
+builder.Services.Configure<NamedMcpServersOptions>(builder.Configuration);
 
 builder.Services.AddOptions<McpServerOptions>().Configure<IMcpRuntime>((mcpServerOptions, mcpRuntime) =>
 {
