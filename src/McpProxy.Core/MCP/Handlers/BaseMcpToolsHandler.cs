@@ -32,7 +32,7 @@ public abstract class BaseMcpToolsHandler(ILogger logger) : IMcpToolsHandler
     public abstract ValueTask<CallToolResult> CallToolsAsync(RequestContext<CallToolRequestParams> request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Disposes resources owned by this tool loader with double disposal protection.
+    /// 释放资源
     /// </summary>
     public async ValueTask DisposeAsync()
     {
@@ -56,26 +56,17 @@ public abstract class BaseMcpToolsHandler(ILogger logger) : IMcpToolsHandler
     }
 
     /// <summary>
-    /// Override this method in derived classes to implement disposal logic.
-    /// This method is called exactly once during disposal.
+    /// 覆盖此方法以在派生类中实现特定的清理逻辑
+    /// 这个方法在释放过程中仅被调用一次
     /// </summary>
-    /// <returns>A task representing the asynchronous disposal operation.</returns>
     protected virtual ValueTask DisposeAsyncCore()
     {
         return ValueTask.CompletedTask;
     }
 
     /// <summary>
-    /// Creates a new instance of <see cref="McpClientOptions"/> configured with handlers and client information based
-    /// on the specified server's capabilities.
+    /// 使用指定的MCP服务器创建相关的客户端配置信息
     /// </summary>
-    /// <remarks>The returned client options will include handlers for sampling and elicitation if the
-    /// corresponding capabilities are present in the server. Handlers are set to invoke the server's asynchronous
-    /// methods for sampling and elicitation as appropriate.</remarks>
-    /// <param name="server">The server from which client capabilities and information are retrieved to configure the client options. Cannot
-    /// be null.</param>
-    /// <returns>A <see cref="McpClientOptions"/> instance containing handlers and client information derived from the provided
-    /// server.</returns>
     protected McpClientOptions CreateClientOptions(McpServer server)
     {
         McpClientHandlers handlers = new();
@@ -103,6 +94,26 @@ public abstract class BaseMcpToolsHandler(ILogger logger) : IMcpToolsHandler
         {
             ClientInfo = server.ClientInfo,
             Handlers = handlers,
+        };
+
+        return clientOptions;
+    }
+
+    /// <summary>
+    /// 使用指定的信息创建相关的客户端配置信息
+    /// </summary>
+    protected McpClientOptions CreateClientOptions(string name, string? title = null, string version = "1.0.0")
+    {
+        Implementation implementation = new()
+        {
+            Name = name,
+            Version = version,
+            Title = title
+        };
+
+        McpClientOptions clientOptions = new()
+        {
+            ClientInfo = implementation
         };
 
         return clientOptions;

@@ -134,7 +134,7 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
 
                 try
                 {
-                    mcpClient = await this._serverDiscoveryStrategy.GetOrCreateClientAsync(serverMetadata.Name, ClientOptions, cancellationToken);
+                    mcpClient = await this._serverDiscoveryStrategy.GetOrCreateClientAsync(serverMetadata.Name, CreateClientOptions(serverMetadata.Name, serverMetadata.Title), cancellationToken);
                 }
                 catch (InvalidOperationException ex)
                 {

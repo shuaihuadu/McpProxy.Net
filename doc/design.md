@@ -9,7 +9,7 @@ flowchart TD
         Client
     end
 
-    subgraph B [.NET MCP Bridge]
+    subgraph B [.NET MCP Proxy]
         B1[SSE/HTTP Server]
         B2[Stdio Transport]
         B1 -- MCP Request Message --> B2

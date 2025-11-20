@@ -14,7 +14,23 @@ public class McpRuntime : IMcpRuntime
         this._toolsHandler = toolsHandler;
         this._logger = logger;
 
-        _logger.LogInformation("McpRuntime initialized with tool loader of type {ToolLoaderType}.", _toolsHandler.GetType().Name);
+        _logger.LogInformation("McpRuntime initialized with tool loader of type {ToolHandlerType}.", _toolsHandler.GetType().Name);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<ListToolsResult> ListToolsHandler(RequestContext<ListToolsRequestParams> request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            ListToolsResult result = await this._toolsHandler.ListToolsAsync(request, cancellationToken);
+
+            return result;
+        }
+        catch (Exception)
+        {
+            // TODO 可观测性处理
+            throw;
+        }
     }
 
     /// <inheritdoc />
@@ -48,21 +64,6 @@ public class McpRuntime : IMcpRuntime
                 }],
                 IsError = true,
             };
-        }
-        catch (Exception)
-        {
-            throw;
-        }
-    }
-
-    /// <inheritdoc />
-    public async ValueTask<ListToolsResult> ListToolsHandler(RequestContext<ListToolsRequestParams> request, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            ListToolsResult result = await this._toolsHandler.ListToolsAsync(request, cancellationToken);
-
-            return result;
         }
         catch (Exception)
         {

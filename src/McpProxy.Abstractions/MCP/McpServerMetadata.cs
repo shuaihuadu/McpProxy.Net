@@ -1,5 +1,11 @@
 ﻿namespace McpProxy;
 
+/// <summary>
+/// Represents metadata information for a mcp server.
+/// </summary>
+/// <param name="id">The unique identifier assigned to the server. If not specified, defaults to an empty string.</param>
+/// <param name="name">The display name of the server. If not specified, defaults to an empty string.</param>
+/// <param name="description">A description of the server's purpose or capabilities. If not specified, defaults to an empty string.</param>
 public sealed class McpServerMetadata(string id = "", string name = "", string description = "")
 {
     /// <summary>
