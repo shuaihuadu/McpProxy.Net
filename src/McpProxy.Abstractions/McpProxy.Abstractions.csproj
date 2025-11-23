@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<AssemblyName>IdeaTech.McpProxy.Abstractions</AssemblyName>
+	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="IdeaTech.CandyBox" />
 		<PackageReference Include="ModelContextProtocol.Core" />
 	</ItemGroup>
+	<Import Project="$(SolutionDir)/NuGet.props" />
 </Project>
