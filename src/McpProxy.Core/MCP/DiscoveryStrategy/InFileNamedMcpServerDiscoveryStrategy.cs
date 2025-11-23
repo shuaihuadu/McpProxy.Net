@@ -6,7 +6,7 @@
 /// </summary>
 /// <param name="options">Options for configuring the service behavior.</param>
 /// <param name="logger">Logger instance for this discovery strategy.</param>
-public sealed class NamedMcpServerDiscoveryStrategy(IOptions<NamedMcpServersOptions> options, ILogger<NamedMcpServerDiscoveryStrategy> logger) : BaseDiscoveryStrategy(logger)
+public sealed class InFileNamedMcpServerDiscoveryStrategy(IOptions<NamedMcpServersOptions> options, ILogger<InFileNamedMcpServerDiscoveryStrategy> logger) : BaseDiscoveryStrategy(logger)
 {
     private readonly IOptions<NamedMcpServersOptions> _options = options;
 
