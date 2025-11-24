@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<AssemblyName>IdeaTech.McpProxy</AssemblyName>
+		<AssemblyName>IdeaTech.McpProxy.Core</AssemblyName>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="IdeaTech.CandyBox" />
