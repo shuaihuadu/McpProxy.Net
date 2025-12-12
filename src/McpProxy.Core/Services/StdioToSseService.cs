@@ -7,12 +7,14 @@ using McpProxy.Abstractions.Services;
 using McpProxy.Abstractions.Models;
 using System.Collections.Concurrent;
 using System.Text.Json;
+using ModelContextProtocol.Server;
 
 namespace McpProxy.Core.Services;
 
 /// <summary>
-/// ÊµÏÖStdioµ½SSE/HTTPµÄºËĞÄÒµÎñÂß¼­
-/// ¸Ã·şÎñÁ¬½Óµ½Ò»¸ö»ò¶à¸ö±¾µØStdio MCP·şÎñÆ÷²¢Ìá¹©¾ÛºÏ²éÑ¯¹¦ÄÜ
+/// å®ç°Stdioåˆ°SSE/HTTPçš„æ ¸å¿ƒä¸šåŠ¡é€»è¾‘
+/// è¯¥æœåŠ¡è¿æ¥åˆ°ä¸€ä¸ªæˆ–å¤šä¸ªæœ¬åœ°Stdio MCPæœåŠ¡å™¨å¹¶æä¾›èšåˆæŸ¥è¯¢åŠŸèƒ½
+/// åŒæ—¶æ”¯æŒ REST API æ–¹å¼å’Œ MCP åŸç”Ÿåè®®æ–¹å¼
 /// </summary>
 public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
 {
@@ -23,12 +25,12 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     private bool _initialized;
 
     /// <summary>
-    /// ³õÊ¼»¯ <see cref="StdioToSseService"/> ÀàµÄĞÂÊµÀı
+    /// åˆå§‹åŒ– <see cref="StdioToSseService"/> ç±»çš„æ–°å®ä¾‹
     /// </summary>
-    /// <param name="options">Stdio·şÎñÆ÷ÅäÖÃÑ¡Ïî</param>
-    /// <param name="logger">ÈÕÖ¾¼ÇÂ¼Æ÷</param>
-    /// <param name="loggerFactory">ÈÕÖ¾¹¤³§£¨¿ÉÑ¡£©</param>
-    /// <exception cref="ArgumentNullException">µ± <paramref name="options"/> »ò <paramref name="logger"/> Îª null Ê±Å×³ö</exception>
+    /// <param name="options">StdioæœåŠ¡å™¨é…ç½®é€‰é¡¹</param>
+    /// <param name="logger">æ—¥å¿—è®°å½•å™¨</param>
+    /// <param name="loggerFactory">æ—¥å¿—å·¥å‚ï¼ˆå¯é€‰ï¼‰</param>
+    /// <exception cref="ArgumentNullException">å½“ <paramref name="options"/> æˆ– <paramref name="logger"/> ä¸º null æ—¶æŠ›å‡º</exception>
     public StdioToSseService(
         IOptions<StdioServersOptions> options,
         ILogger<StdioToSseService> logger,
@@ -43,7 +45,7 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     /// <inheritdoc />
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        // Èç¹ûÒÑ¾­³õÊ¼»¯£¬Ö±½Ó·µ»Ø
+        // å¦‚æœå·²ç»åˆå§‹åŒ–ï¼Œç›´æ¥è¿”å›
         if (this._initialized)
         {
             return;
@@ -53,14 +55,14 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
             "Initializing Stdio to SSE service with {ServerCount} servers",
             this._options.Servers.Count);
 
-        // ´´½¨ËùÓĞÆôÓÃ·şÎñÆ÷µÄÁ¬½ÓÈÎÎñ
-        List<Task> connectionTasks = new List<Task>();
+        // åˆ›å»ºæ‰€æœ‰å¯ç”¨æœåŠ¡å™¨çš„è¿æ¥ä»»åŠ¡
+        List<Task> connectionTasks = [];
         foreach (McpServerConfig serverConfig in this._options.Servers.Where(s => s.Enabled))
         {
             connectionTasks.Add(this.ConnectToServerAsync(serverConfig, cancellationToken));
         }
 
-        // ²¢·¢µÈ´ıËùÓĞ·şÎñÆ÷Á¬½ÓÍê³É
+        // å¹¶å‘ç­‰å¾…æ‰€æœ‰æœåŠ¡å™¨è¿æ¥å®Œæˆ
         await Task.WhenAll(connectionTasks).ConfigureAwait(false);
 
         this._logger.LogInformation(
@@ -68,7 +70,7 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
             this._servers.Count,
             this._options.Servers.Count(s => s.Enabled));
 
-        // Èç¹ûÃ»ÓĞÈÎºÎ·şÎñÆ÷Á¬½Ó³É¹¦£¬Å×³öÒì³£
+        // å¦‚æœæ²¡æœ‰ä»»ä½•æœåŠ¡å™¨è¿æ¥æˆåŠŸï¼ŒæŠ›å‡ºå¼‚å¸¸
         if (this._servers.IsEmpty)
         {
             throw new InvalidOperationException("Failed to connect to any MCP servers");
@@ -77,6 +79,8 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
         this._initialized = true;
     }
 
+    #region IStdioToSseService æ¥å£å®ç°ï¼ˆREST API æ–¹å¼ï¼‰
+
     /// <inheritdoc />
     public async Task<ListToolsResult> ListToolsAsync(
         string? serverFilter = null,
@@ -84,14 +88,14 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     {
         this.EnsureInitialized();
 
-        // Èç¹ûÖ¸¶¨ÁË·şÎñÆ÷¹ıÂËÆ÷ÇÒÔÊĞí¹ıÂË£¬ÔòÖ»²éÑ¯¸Ã·şÎñÆ÷
+        // å¦‚æœæŒ‡å®šäº†æœåŠ¡å™¨è¿‡æ»¤å™¨ä¸”å…è®¸è¿‡æ»¤ï¼Œåˆ™åªæŸ¥è¯¢è¯¥æœåŠ¡å™¨
         if (!string.IsNullOrEmpty(serverFilter) && this._options.AllowServerFilter)
         {
             this._logger.LogDebug("Listing tools for server: {ServerName}", serverFilter);
             return await this.ListToolsFromServerAsync(serverFilter, false, cancellationToken).ConfigureAwait(false);
         }
 
-        // ·ñÔò²éÑ¯ËùÓĞ·şÎñÆ÷²¢¾ÛºÏ½á¹û
+        // å¦åˆ™æŸ¥è¯¢æ‰€æœ‰æœåŠ¡å™¨å¹¶èšåˆç»“æœ
         this._logger.LogDebug("Listing tools from all servers");
         return await this.ListAllToolsAsync(this._options.UseNamespacePrefix, cancellationToken).ConfigureAwait(false);
     }
@@ -104,7 +108,7 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     {
         this.EnsureInitialized();
 
-        // ½âÎö¹¤¾ßÃû³Æ£¬ÌáÈ¡·şÎñÆ÷Ãû³ÆºÍÊµ¼Ê¹¤¾ßÃû³Æ
+        // è§£æå·¥å…·åç§°ï¼Œæå–æœåŠ¡å™¨åç§°å’Œå®é™…å·¥å…·åç§°
         (string serverName, string actualToolName) = this.ParseToolName(toolName);
 
         this._logger.LogDebug(
@@ -112,13 +116,13 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
             actualToolName,
             serverName);
 
-        // ²éÕÒÄ¿±ê·şÎñÆ÷Á¬½Ó
+        // æŸ¥æ‰¾ç›®æ ‡æœåŠ¡å™¨è¿æ¥
         if (!this._servers.TryGetValue(serverName, out ServerConnection? connection))
         {
             throw new InvalidOperationException($"Server '{serverName}' not found or not connected");
         }
 
-        // µ÷ÓÃ¹¤¾ß²¢·µ»Ø½á¹û
+        // è°ƒç”¨å·¥å…·å¹¶è¿”å›ç»“æœ
         CallToolResult result = await connection.Client.CallToolAsync(
             new CallToolRequestParams
             {
@@ -137,13 +141,13 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     {
         this.EnsureInitialized();
 
-        // Èç¹ûÖ¸¶¨ÁË·şÎñÆ÷¹ıÂËÆ÷ÇÒÔÊĞí¹ıÂË£¬ÔòÖ»²éÑ¯¸Ã·şÎñÆ÷
+        // å¦‚æœæŒ‡å®šäº†æœåŠ¡å™¨è¿‡æ»¤å™¨ä¸”å…è®¸è¿‡æ»¤ï¼Œåˆ™åªæŸ¥è¯¢è¯¥æœåŠ¡å™¨
         if (!string.IsNullOrEmpty(serverFilter) && this._options.AllowServerFilter)
         {
             return await this.ListPromptsFromServerAsync(serverFilter, false, cancellationToken).ConfigureAwait(false);
         }
 
-        // ·ñÔò²éÑ¯ËùÓĞ·şÎñÆ÷²¢¾ÛºÏ½á¹û
+        // å¦åˆ™æŸ¥è¯¢æ‰€æœ‰æœåŠ¡å™¨å¹¶èšåˆç»“æœ
         return await this.ListAllPromptsAsync(this._options.UseNamespacePrefix, cancellationToken).ConfigureAwait(false);
     }
 
@@ -155,16 +159,16 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     {
         this.EnsureInitialized();
 
-        // ½âÎöÌáÊ¾Ãû³Æ£¬ÌáÈ¡·şÎñÆ÷Ãû³ÆºÍÊµ¼ÊÌáÊ¾Ãû³Æ
+        // è§£ææç¤ºåç§°ï¼Œæå–æœåŠ¡å™¨åç§°å’Œå®é™…æç¤ºåç§°
         (string serverName, string actualPromptName) = this.ParseToolName(promptName);
 
-        // ²éÕÒÄ¿±ê·şÎñÆ÷Á¬½Ó
+        // æŸ¥æ‰¾ç›®æ ‡æœåŠ¡å™¨è¿æ¥
         if (!this._servers.TryGetValue(serverName, out ServerConnection? connection))
         {
             throw new InvalidOperationException($"Server '{serverName}' not found or not connected");
         }
 
-        // »ñÈ¡ÌáÊ¾²¢·µ»Ø½á¹û
+        // è·å–æç¤ºå¹¶è¿”å›ç»“æœ
         GetPromptResult result = await connection.Client.GetPromptAsync(
             new GetPromptRequestParams
             {
@@ -183,13 +187,13 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     {
         this.EnsureInitialized();
 
-        // Èç¹ûÖ¸¶¨ÁË·şÎñÆ÷¹ıÂËÆ÷ÇÒÔÊĞí¹ıÂË£¬ÔòÖ»²éÑ¯¸Ã·şÎñÆ÷
+        // å¦‚æœæŒ‡å®šäº†æœåŠ¡å™¨è¿‡æ»¤å™¨ä¸”å…è®¸è¿‡æ»¤ï¼Œåˆ™åªæŸ¥è¯¢è¯¥æœåŠ¡å™¨
         if (!string.IsNullOrEmpty(serverFilter) && this._options.AllowServerFilter)
         {
             return await this.ListResourcesFromServerAsync(serverFilter, false, cancellationToken).ConfigureAwait(false);
         }
 
-        // ·ñÔò²éÑ¯ËùÓĞ·şÎñÆ÷²¢¾ÛºÏ½á¹û
+        // å¦åˆ™æŸ¥è¯¢æ‰€æœ‰æœåŠ¡å™¨å¹¶èšåˆç»“æœ
         return await this.ListAllResourcesAsync(this._options.UseNamespacePrefix, cancellationToken).ConfigureAwait(false);
     }
 
@@ -200,16 +204,16 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     {
         this.EnsureInitialized();
 
-        // ½âÎö×ÊÔ´URI£¬ÌáÈ¡·şÎñÆ÷Ãû³ÆºÍÊµ¼ÊURI
+        // è§£æèµ„æºURIï¼Œæå–æœåŠ¡å™¨åç§°å’Œå®é™…URI
         (string serverName, string actualUri) = this.ParseResourceUri(resourceUri);
 
-        // ²éÕÒÄ¿±ê·şÎñÆ÷Á¬½Ó
+        // æŸ¥æ‰¾ç›®æ ‡æœåŠ¡å™¨è¿æ¥
         if (!this._servers.TryGetValue(serverName, out ServerConnection? connection))
         {
             throw new InvalidOperationException($"Server '{serverName}' not found or not connected");
         }
 
-        // ¶ÁÈ¡×ÊÔ´²¢·µ»Ø½á¹û
+        // è¯»å–èµ„æºå¹¶è¿”å›ç»“æœ
         ReadResourceResult result = await connection.Client.ReadResourceAsync(
             new ReadResourceRequestParams { Uri = actualUri },
             cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -222,7 +226,7 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     {
         this.EnsureInitialized();
 
-        // ÊÕ¼¯ËùÓĞ·şÎñÆ÷µÄ×´Ì¬ĞÅÏ¢
+        // æ”¶é›†æ‰€æœ‰æœåŠ¡å™¨çš„çŠ¶æ€ä¿¡æ¯
         IReadOnlyList<ServerStatusInfo> status = this._servers.Values.Select(s => new ServerStatusInfo
         {
             Name = s.Name,
@@ -241,21 +245,21 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
     {
         this.EnsureInitialized();
 
-        ServerCapabilities capabilities = new ServerCapabilities();
+        ServerCapabilities capabilities = new();
 
-        // Èç¹ûÈÎºÎ·şÎñÆ÷Ö§³Ö¹¤¾ß£¬Ôò¾ÛºÏ·şÎñÆ÷Ò²Ö§³Ö
+        // å¦‚æœä»»ä½•æœåŠ¡å™¨æ”¯æŒå·¥å…·ï¼Œåˆ™èšåˆæœåŠ¡å™¨ä¹Ÿæ”¯æŒ
         if (this._servers.Values.Any(s => s.Capabilities?.Tools != null))
         {
             capabilities.Tools = new ToolsCapability();
         }
 
-        // Èç¹ûÈÎºÎ·şÎñÆ÷Ö§³ÖÌáÊ¾£¬Ôò¾ÛºÏ·şÎñÆ÷Ò²Ö§³Ö
+        // å¦‚æœä»»ä½•æœåŠ¡å™¨æ”¯æŒæç¤ºï¼Œåˆ™èšåˆæœåŠ¡å™¨ä¹Ÿæ”¯æŒ
         if (this._servers.Values.Any(s => s.Capabilities?.Prompts != null))
         {
             capabilities.Prompts = new PromptsCapability();
         }
 
-        // Èç¹ûÈÎºÎ·şÎñÆ÷Ö§³Ö×ÊÔ´£¬Ôò¾ÛºÏ·şÎñÆ÷Ò²Ö§³Ö
+        // å¦‚æœä»»ä½•æœåŠ¡å™¨æ”¯æŒèµ„æºï¼Œåˆ™èšåˆæœåŠ¡å™¨ä¹Ÿæ”¯æŒ
         if (this._servers.Values.Any(s => s.Capabilities?.Resources != null))
         {
             capabilities.Resources = new ResourcesCapability();
@@ -264,12 +268,216 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
         return capabilities;
     }
 
+    #endregion
+
+    #region MCP åŸç”Ÿåè®®æ”¯æŒï¼ˆä» StdioToHttpProxyService åˆå¹¶ï¼‰
+
     /// <summary>
-    /// Á¬½Óµ½Ö¸¶¨µÄStdio·şÎñÆ÷
+    /// åˆ›å»ºèšåˆçš„MCPæœåŠ¡å™¨é€‰é¡¹ï¼ˆç”¨äº MCP åŸç”Ÿåè®®ï¼‰
     /// </summary>
-    /// <param name="config">·şÎñÆ÷ÅäÖÃ</param>
-    /// <param name="cancellationToken">È¡ÏûÁîÅÆ</param>
-    /// <returns>±íÊ¾Òì²½²Ù×÷µÄÈÎÎñ</returns>
+    /// <returns>é…ç½®å¥½çš„æœåŠ¡å™¨é€‰é¡¹</returns>
+    public McpServerOptions CreateAggregatedServerOptions()
+    {
+        this.EnsureInitialized();
+
+        this._logger.LogInformation(
+            "Creating aggregated server with UseNamespacePrefix={UsePrefix}, AllowServerFilter={AllowFilter}",
+            this._options.UseNamespacePrefix,
+            this._options.AllowServerFilter);
+
+        McpServerOptions options = new()
+        {
+            ServerInfo = new Implementation
+            {
+                Name = "mcp-proxy",
+                Version = "1.0.0"
+            },
+            Capabilities = this.GetAggregatedCapabilities(),
+            Handlers = new McpServerHandlers()
+        };
+
+        // æ³¨å†Œèšåˆçš„å·¥å…·å¤„ç†å™¨
+        options.Handlers.ListToolsHandler = this.CreateListToolsHandler();
+        options.Handlers.CallToolHandler = this.CreateCallToolHandler();
+
+        // æ³¨å†Œèšåˆçš„æç¤ºå¤„ç†å™¨
+        options.Handlers.ListPromptsHandler = this.CreateListPromptsHandler();
+        options.Handlers.GetPromptHandler = this.CreateGetPromptHandler();
+
+        // æ³¨å†Œèšåˆçš„èµ„æºå¤„ç†å™¨
+        options.Handlers.ListResourcesHandler = this.CreateListResourcesHandler();
+        options.Handlers.ReadResourceHandler = this.CreateReadResourceHandler();
+
+        return options;
+    }
+
+    /// <summary>
+    /// è·å–æ‰€æœ‰æœåŠ¡å™¨è¿æ¥ä¿¡æ¯ï¼ˆç”¨äºç®¡ç†ç«¯ç‚¹ï¼‰
+    /// </summary>
+    public IReadOnlyCollection<(string Name, bool IsConnected, Implementation? ServerInfo, ServerCapabilities? Capabilities)> GetServerConnections()
+    {
+        this.EnsureInitialized();
+
+        return this._servers.Values
+            .Select(s => (s.Name, s.IsConnected, s.ServerInfo, s.Capabilities))
+            .ToList();
+    }
+
+    #endregion
+
+    #region MCP Handler åˆ›å»ºæ–¹æ³•
+
+    private McpRequestHandler<ListToolsRequestParams, ListToolsResult> CreateListToolsHandler()
+    {
+        return async (request, cancellationToken) =>
+        {
+            string? serverFilter = this.ExtractServerFilter(request);
+
+            if (serverFilter != null && this._options.AllowServerFilter)
+            {
+                this._logger.LogDebug("Listing tools for server: {ServerName}", serverFilter);
+                return await this.ListToolsFromServerAsync(serverFilter, false, cancellationToken).ConfigureAwait(false);
+            }
+
+            this._logger.LogDebug("Listing tools from all servers");
+            return await this.ListAllToolsAsync(this._options.UseNamespacePrefix, cancellationToken).ConfigureAwait(false);
+        };
+    }
+
+    private McpRequestHandler<CallToolRequestParams, CallToolResult> CreateCallToolHandler()
+    {
+        return async (request, cancellationToken) =>
+        {
+            (string serverName, string toolName) = this.ParseToolName(request.Params?.Name ?? "");
+
+            this._logger.LogDebug(
+                "Calling tool '{ToolName}' on server '{ServerName}'",
+                toolName,
+                serverName);
+
+            if (!this._servers.TryGetValue(serverName, out ServerConnection? connection))
+            {
+                throw new InvalidOperationException($"Server '{serverName}' not found or not connected");
+            }
+
+            return await connection.Client.CallToolAsync(
+                new CallToolRequestParams
+                {
+                    Name = toolName,
+                    Arguments = request.Params?.Arguments
+                },
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+        };
+    }
+
+    private McpRequestHandler<ListPromptsRequestParams, ListPromptsResult> CreateListPromptsHandler()
+    {
+        return async (request, cancellationToken) =>
+        {
+            string? serverFilter = this.ExtractServerFilter(request);
+
+            if (serverFilter != null && this._options.AllowServerFilter)
+            {
+                return await this.ListPromptsFromServerAsync(serverFilter, false, cancellationToken).ConfigureAwait(false);
+            }
+
+            return await this.ListAllPromptsAsync(this._options.UseNamespacePrefix, cancellationToken).ConfigureAwait(false);
+        };
+    }
+
+    private McpRequestHandler<GetPromptRequestParams, GetPromptResult> CreateGetPromptHandler()
+    {
+        return async (request, cancellationToken) =>
+        {
+            (string serverName, string promptName) = this.ParseToolName(request.Params?.Name ?? "");
+
+            if (!this._servers.TryGetValue(serverName, out ServerConnection? connection))
+            {
+                throw new InvalidOperationException($"Server '{serverName}' not found or not connected");
+            }
+
+            return await connection.Client.GetPromptAsync(
+                new GetPromptRequestParams
+                {
+                    Name = promptName,
+                    Arguments = request.Params?.Arguments
+                },
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+        };
+    }
+
+    private McpRequestHandler<ListResourcesRequestParams, ListResourcesResult> CreateListResourcesHandler()
+    {
+        return async (request, cancellationToken) =>
+        {
+            string? serverFilter = this.ExtractServerFilter(request);
+
+            if (serverFilter != null && this._options.AllowServerFilter)
+            {
+                return await this.ListResourcesFromServerAsync(serverFilter, false, cancellationToken).ConfigureAwait(false);
+            }
+
+            return await this.ListAllResourcesAsync(this._options.UseNamespacePrefix, cancellationToken).ConfigureAwait(false);
+        };
+    }
+
+    private McpRequestHandler<ReadResourceRequestParams, ReadResourceResult> CreateReadResourceHandler()
+    {
+        return async (request, cancellationToken) =>
+        {
+            string uri = request.Params?.Uri ?? "";
+            (string serverName, string resourceUri) = this.ParseResourceUri(uri);
+
+            if (!this._servers.TryGetValue(serverName, out ServerConnection? connection))
+            {
+                throw new InvalidOperationException($"Server '{serverName}' not found or not connected");
+            }
+
+            return await connection.Client.ReadResourceAsync(
+                new ReadResourceRequestParams { Uri = resourceUri },
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+        };
+    }
+
+    private string? ExtractServerFilter(object request)
+    {
+        if (request == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var paramsProperty = request.GetType().GetProperty("Params");
+            if (paramsProperty == null) return null;
+
+            var paramsValue = paramsProperty.GetValue(request);
+            if (paramsValue == null) return null;
+
+            var metaProperty = paramsValue.GetType().GetProperty("_meta");
+            if (metaProperty == null) return null;
+
+            var metaValue = metaProperty.GetValue(paramsValue);
+            if (metaValue == null) return null;
+
+            var serverProperty = metaValue.GetType().GetProperty("server");
+            if (serverProperty == null) return null;
+
+            return serverProperty.GetValue(metaValue)?.ToString();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    #endregion
+
+    #region ç§æœ‰è¾…åŠ©æ–¹æ³•
+
+    /// <summary>
+    /// è¿æ¥åˆ°æŒ‡å®šçš„StdioæœåŠ¡å™¨
+    /// </summary>
     private async Task ConnectToServerAsync(McpServerConfig config, CancellationToken cancellationToken)
     {
         try
@@ -278,10 +486,9 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
                 "Connecting to server '{ServerName}': {Command} {Arguments}",
                 config.Name,
                 config.Command,
-                string.Join(" ", config.Arguments ?? new List<string>()));
+                string.Join(" ", config.Arguments ?? []));
 
-            // ´´½¨Stdio¿Í»§¶Ë´«ÊäÑ¡Ïî
-            StdioClientTransportOptions transportOptions = new StdioClientTransportOptions
+            StdioClientTransportOptions transportOptions = new()
             {
                 Command = config.Command,
                 Arguments = config.Arguments,
@@ -289,12 +496,10 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
                 WorkingDirectory = config.WorkingDirectory
             };
 
-            // ´´½¨Stdio´«Êä²ã
-            StdioClientTransport transport = new StdioClientTransport(
+            StdioClientTransport transport = new(
                 transportOptions,
                 loggerFactory: this._loggerFactory);
 
-            // ´´½¨²¢³õÊ¼»¯MCP¿Í»§¶Ë
             McpClient client = await McpClient.CreateAsync(
                 transport,
                 clientOptions: new McpClientOptions
@@ -308,8 +513,7 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
                 loggerFactory: this._loggerFactory,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            // ´´½¨·şÎñÆ÷Á¬½Ó¶ÔÏó
-            ServerConnection connection = new ServerConnection
+            ServerConnection connection = new()
             {
                 Name = config.Name,
                 Client = client,
@@ -320,7 +524,6 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
                 LastHeartbeat = DateTime.UtcNow
             };
 
-            // ½«Á¬½ÓÌí¼Óµ½×ÖµäÖĞ
             this._servers[config.Name] = connection;
 
             this._logger.LogInformation(
@@ -339,13 +542,6 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// ½âÎö´øÃüÃû¿Õ¼äÇ°×ºµÄ¹¤¾ß»òÌáÊ¾Ãû³Æ
-    /// </summary>
-    /// <param name="fullName">ÍêÕûÃû³Æ£¬¸ñÊ½Îª "servername:itemname" »ò "itemname"</param>
-    /// <returns>°üº¬·şÎñÆ÷Ãû³ÆºÍÏîÄ¿Ãû³ÆµÄÔª×é</returns>
-    /// <exception cref="ArgumentException">µ±Ãû³ÆÎª¿ÕÊ±Å×³ö</exception>
-    /// <exception cref="InvalidOperationException">µ±ÅäÖÃÁË¶à¸ö·şÎñÆ÷µ«Ãû³Æ²»°üº¬Ç°×ºÊ±Å×³ö</exception>
     private (string serverName, string itemName) ParseToolName(string fullName)
     {
         if (string.IsNullOrEmpty(fullName))
@@ -353,35 +549,21 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
             throw new ArgumentException("Item name cannot be empty", nameof(fullName));
         }
 
-        // ²éÕÒÃ°ºÅ·Ö¸ô·û
         int colonIndex = fullName.IndexOf(':', StringComparison.Ordinal);
         if (colonIndex > 0)
         {
-            // ¸ñÊ½: "servername:itemname"
-            string serverName = fullName.Substring(0, colonIndex);
-            string itemName = fullName.Substring(colonIndex + 1);
-            return (serverName, itemName);
+            return (fullName[..colonIndex], fullName[(colonIndex + 1)..]);
         }
 
-        // Èç¹ûÖ»ÅäÖÃÁËÒ»¸ö·şÎñÆ÷£¬Ö±½ÓÊ¹ÓÃ¸Ã·şÎñÆ÷
         if (this._servers.Count == 1)
         {
-            string serverName = this._servers.Keys.First();
-            return (serverName, fullName);
+            return (this._servers.Keys.First(), fullName);
         }
 
-        // ¶à·şÎñÆ÷ÅäÖÃÏÂ±ØĞë°üº¬Ç°×º
         throw new InvalidOperationException(
             $"Item name '{fullName}' must include server prefix (format: 'servername:itemname') when multiple servers are configured");
     }
 
-    /// <summary>
-    /// ½âÎö´øÃüÃû¿Õ¼äÇ°×ºµÄ×ÊÔ´URI
-    /// </summary>
-    /// <param name="uri">ÍêÕûURI£¬¸ñÊ½Îª "servername:scheme://path" »ò "scheme://path"</param>
-    /// <returns>°üº¬·şÎñÆ÷Ãû³ÆºÍÊµ¼ÊURIµÄÔª×é</returns>
-    /// <exception cref="ArgumentException">µ±URIÎª¿ÕÊ±Å×³ö</exception>
-    /// <exception cref="InvalidOperationException">µ±ÅäÖÃÁË¶à¸ö·şÎñÆ÷µ«URI²»°üº¬Ç°×ºÊ±Å×³ö</exception>
     private (string serverName, string resourceUri) ParseResourceUri(string uri)
     {
         if (string.IsNullOrEmpty(uri))
@@ -389,7 +571,6 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
             throw new ArgumentException("Resource URI cannot be empty", nameof(uri));
         }
 
-        // ²éÕÒ :// µÄÎ»ÖÃ
         int schemeEnd = uri.IndexOf("://", StringComparison.Ordinal);
         if (schemeEnd > 0)
         {
@@ -398,47 +579,33 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
 
             if (colonIndex > 0)
             {
-                // ¸ñÊ½: "servername:scheme://path"
-                string serverName = scheme.Slice(0, colonIndex).ToString();
-                string actualScheme = scheme.Slice(colonIndex + 1).ToString();
-                string resourceUri = actualScheme + uri.Substring(schemeEnd);
+                string serverName = scheme[..colonIndex].ToString();
+                string resourceUri = string.Concat(scheme[(colonIndex + 1)..], uri.AsSpan(schemeEnd));
                 return (serverName, resourceUri);
             }
         }
 
-        // Èç¹ûÖ»ÅäÖÃÁËÒ»¸ö·şÎñÆ÷£¬Ö±½ÓÊ¹ÓÃ¸Ã·şÎñÆ÷
         if (this._servers.Count == 1)
         {
-            string serverName = this._servers.Keys.First();
-            return (serverName, uri);
+            return (this._servers.Keys.First(), uri);
         }
 
-        // ¶à·şÎñÆ÷ÅäÖÃÏÂ±ØĞë°üº¬Ç°×º
         throw new InvalidOperationException(
             $"Resource URI '{uri}' must include server prefix when multiple servers are configured");
     }
 
-    /// <summary>
-    /// ÁĞ³öÖ¸¶¨·şÎñÆ÷µÄ¹¤¾ß
-    /// </summary>
-    /// <param name="serverName">·şÎñÆ÷Ãû³Æ</param>
-    /// <param name="includePrefix">ÊÇ·ñÔÚ¹¤¾ßÃû³ÆÇ°Ìí¼Ó·şÎñÆ÷Ç°×º</param>
-    /// <param name="cancellationToken">È¡ÏûÁîÅÆ</param>
-    /// <returns>°üº¬¹¤¾ßÁĞ±íµÄ½á¹û</returns>
     private async Task<ListToolsResult> ListToolsFromServerAsync(
         string serverName,
         bool includePrefix,
         CancellationToken cancellationToken)
     {
-        // °²È«µØ²éÑ¯·şÎñÆ÷
         ListToolsResult result = await this.QueryServerSafelyAsync(
             serverName,
             (client, param, ct) => client.ListToolsAsync(param, cancellationToken: ct),
             new ListToolsRequestParams(),
-            () => new ListToolsResult { Tools = new List<Tool>() },
+            () => new ListToolsResult { Tools = [] },
             cancellationToken).ConfigureAwait(false);
 
-        // Èç¹ûĞèÒªÌí¼ÓÇ°×º£¬ÔòÎªÃ¿¸ö¹¤¾ßÃû³ÆÌí¼Ó·şÎñÆ÷Ç°×º
         if (includePrefix && result.Tools != null)
         {
             foreach (Tool tool in result.Tools)
@@ -450,50 +617,33 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
         return result;
     }
 
-    /// <summary>
-    /// ÁĞ³öËùÓĞ·şÎñÆ÷µÄ¹¤¾ß²¢¾ÛºÏ
-    /// </summary>
-    /// <param name="includePrefix">ÊÇ·ñÔÚ¹¤¾ßÃû³ÆÇ°Ìí¼Ó·şÎñÆ÷Ç°×º</param>
-    /// <param name="cancellationToken">È¡ÏûÁîÅÆ</param>
-    /// <returns>°üº¬¾ÛºÏºó¹¤¾ßÁĞ±íµÄ½á¹û</returns>
     private async Task<ListToolsResult> ListAllToolsAsync(bool includePrefix, CancellationToken cancellationToken)
     {
-        // ²¢·¢²éÑ¯ËùÓĞ·şÎñÆ÷
         List<Task<ListToolsResult>> tasks = this._servers.Values
             .Select(conn => this.ListToolsFromServerAsync(conn.Name, includePrefix, cancellationToken))
             .ToList();
 
         ListToolsResult[] results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
-        // ¾ÛºÏËùÓĞ¹¤¾ß
         List<Tool> allTools = results
-            .SelectMany(r => r.Tools ?? Enumerable.Empty<Tool>())
+            .SelectMany(r => r.Tools ?? [])
             .ToList();
 
         return new ListToolsResult { Tools = allTools };
     }
 
-    /// <summary>
-    /// ÁĞ³öÖ¸¶¨·şÎñÆ÷µÄÌáÊ¾
-    /// </summary>
-    /// <param name="serverName">·şÎñÆ÷Ãû³Æ</param>
-    /// <param name="includePrefix">ÊÇ·ñÔÚÌáÊ¾Ãû³ÆÇ°Ìí¼Ó·şÎñÆ÷Ç°×º</param>
-    /// <param name="cancellationToken">È¡ÏûÁîÅÆ</param>
-    /// <returns>°üº¬ÌáÊ¾ÁĞ±íµÄ½á¹û</returns>
     private async Task<ListPromptsResult> ListPromptsFromServerAsync(
         string serverName,
         bool includePrefix,
         CancellationToken cancellationToken)
     {
-        // °²È«µØ²éÑ¯·şÎñÆ÷
         ListPromptsResult result = await this.QueryServerSafelyAsync(
             serverName,
             (client, param, ct) => client.ListPromptsAsync(param, cancellationToken: ct),
             new ListPromptsRequestParams(),
-            () => new ListPromptsResult { Prompts = new List<Prompt>() },
+            () => new ListPromptsResult { Prompts = [] },
             cancellationToken).ConfigureAwait(false);
 
-        // Èç¹ûĞèÒªÌí¼ÓÇ°×º£¬ÔòÎªÃ¿¸öÌáÊ¾Ãû³ÆÌí¼Ó·şÎñÆ÷Ç°×º
         if (includePrefix && result.Prompts != null)
         {
             foreach (Prompt prompt in result.Prompts)
@@ -505,50 +655,33 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
         return result;
     }
 
-    /// <summary>
-    /// ÁĞ³öËùÓĞ·şÎñÆ÷µÄÌáÊ¾²¢¾ÛºÏ
-    /// </summary>
-    /// <param name="includePrefix">ÊÇ·ñÔÚÌáÊ¾Ãû³ÆÇ°Ìí¼Ó·şÎñÆ÷Ç°×º</param>
-    /// <param name="cancellationToken">È¡ÏûÁîÅÆ</param>
-    /// <returns>°üº¬¾ÛºÏºóÌáÊ¾ÁĞ±íµÄ½á¹û</returns>
     private async Task<ListPromptsResult> ListAllPromptsAsync(bool includePrefix, CancellationToken cancellationToken)
     {
-        // ²¢·¢²éÑ¯ËùÓĞ·şÎñÆ÷
         List<Task<ListPromptsResult>> tasks = this._servers.Values
             .Select(conn => this.ListPromptsFromServerAsync(conn.Name, includePrefix, cancellationToken))
             .ToList();
 
         ListPromptsResult[] results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
-        // ¾ÛºÏËùÓĞÌáÊ¾
         List<Prompt> allPrompts = results
-            .SelectMany(r => r.Prompts ?? Enumerable.Empty<Prompt>())
+            .SelectMany(r => r.Prompts ?? [])
             .ToList();
 
         return new ListPromptsResult { Prompts = allPrompts };
     }
 
-    /// <summary>
-    /// ÁĞ³öÖ¸¶¨·şÎñÆ÷µÄ×ÊÔ´
-    /// </summary>
-    /// <param name="serverName">·şÎñÆ÷Ãû³Æ</param>
-    /// <param name="includePrefix">ÊÇ·ñÔÚ×ÊÔ´URIÇ°Ìí¼Ó·şÎñÆ÷Ç°×º</param>
-    /// <param name="cancellationToken">È¡ÏûÁîÅÆ</param>
-    /// <returns>°üº¬×ÊÔ´ÁĞ±íµÄ½á¹û</returns>
     private async Task<ListResourcesResult> ListResourcesFromServerAsync(
         string serverName,
         bool includePrefix,
         CancellationToken cancellationToken)
     {
-        // °²È«µØ²éÑ¯·şÎñÆ÷
         ListResourcesResult result = await this.QueryServerSafelyAsync(
             serverName,
             (client, param, ct) => client.ListResourcesAsync(param, cancellationToken: ct),
             new ListResourcesRequestParams(),
-            () => new ListResourcesResult { Resources = new List<Resource>() },
+            () => new ListResourcesResult { Resources = [] },
             cancellationToken).ConfigureAwait(false);
 
-        // Èç¹ûĞèÒªÌí¼ÓÇ°×º£¬ÔòÎªÃ¿¸ö×ÊÔ´URIÌí¼Ó·şÎñÆ÷Ç°×º
         if (includePrefix && result.Resources != null)
         {
             foreach (Resource resource in result.Resources)
@@ -560,61 +693,31 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
         return result;
     }
 
-    /// <summary>
-    /// ÁĞ³öËùÓĞ·şÎñÆ÷µÄ×ÊÔ´²¢¾ÛºÏ
-    /// </summary>
-    /// <param name="includePrefix">ÊÇ·ñÔÚ×ÊÔ´URIÇ°Ìí¼Ó·şÎñÆ÷Ç°×º</param>
-    /// <param name="cancellationToken">È¡ÏûÁîÅÆ</param>
-    /// <returns>°üº¬¾ÛºÏºó×ÊÔ´ÁĞ±íµÄ½á¹û</returns>
     private async Task<ListResourcesResult> ListAllResourcesAsync(bool includePrefix, CancellationToken cancellationToken)
     {
-        // ²¢·¢²éÑ¯ËùÓĞ·şÎñÆ÷
         List<Task<ListResourcesResult>> tasks = this._servers.Values
             .Select(conn => this.ListResourcesFromServerAsync(conn.Name, includePrefix, cancellationToken))
             .ToList();
 
         ListResourcesResult[] results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
-        // ¾ÛºÏËùÓĞ×ÊÔ´
         List<Resource> allResources = results
-            .SelectMany(r => r.Resources ?? Enumerable.Empty<Resource>())
+            .SelectMany(r => r.Resources ?? [])
             .ToList();
 
         return new ListResourcesResult { Resources = allResources };
     }
 
-    /// <summary>
-    /// ÔÚ×ÊÔ´URIÇ°Ìí¼Ó·şÎñÆ÷Ç°×º
-    /// </summary>
-    /// <param name="serverName">·şÎñÆ÷Ãû³Æ</param>
-    /// <param name="uri">Ô­Ê¼URI</param>
-    /// <returns>´ø·şÎñÆ÷Ç°×ºµÄURI</returns>
     private static string AddServerPrefixToUri(string serverName, string uri)
     {
         int schemeEnd = uri.IndexOf("://", StringComparison.Ordinal);
         if (schemeEnd > 0)
         {
-            // ¸ñÊ½: "servername:scheme://path"
-            string scheme = uri.Substring(0, schemeEnd);
-            string path = uri.Substring(schemeEnd);
-            return $"{serverName}:{scheme}{path}";
+            return $"{serverName}:{uri[..schemeEnd]}{uri[schemeEnd..]}";
         }
-
-        // ÎŞschemeµÄURIÖ±½ÓÌí¼ÓÇ°×º
         return $"{serverName}:{uri}";
     }
 
-    /// <summary>
-    /// °²È«µØ²éÑ¯·şÎñÆ÷£¬²¶»ñ²¢´¦ÀíÒì³£
-    /// </summary>
-    /// <typeparam name="TParams">ÇëÇó²ÎÊıÀàĞÍ</typeparam>
-    /// <typeparam name="TResult">½á¹ûÀàĞÍ</typeparam>
-    /// <param name="serverName">·şÎñÆ÷Ãû³Æ</param>
-    /// <param name="queryFunc">²éÑ¯º¯Êı</param>
-    /// <param name="requestParams">ÇëÇó²ÎÊı</param>
-    /// <param name="defaultResultFactory">Ä¬ÈÏ½á¹û¹¤³§º¯Êı</param>
-    /// <param name="cancellationToken">È¡ÏûÁîÅÆ</param>
-    /// <returns>²éÑ¯½á¹û»òÄ¬ÈÏ½á¹û</returns>
     private async Task<TResult> QueryServerSafelyAsync<TParams, TResult>(
         string serverName,
         Func<McpClient, TParams, CancellationToken, ValueTask<TResult>> queryFunc,
@@ -623,7 +726,6 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
         CancellationToken cancellationToken)
         where TResult : class
     {
-        // ²éÕÒ·şÎñÆ÷Á¬½Ó
         if (!this._servers.TryGetValue(serverName, out ServerConnection? connection))
         {
             return defaultResultFactory();
@@ -631,22 +733,15 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
 
         try
         {
-            // Ö´ĞĞ²éÑ¯
-            TResult result = await queryFunc(connection.Client, requestParams, cancellationToken).ConfigureAwait(false);
-            return result;
+            return await queryFunc(connection.Client, requestParams, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            // ¼ÇÂ¼´íÎó²¢·µ»ØÄ¬ÈÏ½á¹û
             this._logger.LogError(ex, "Error querying server '{ServerName}'", serverName);
             return defaultResultFactory();
         }
     }
 
-    /// <summary>
-    /// È·±£·şÎñÒÑ³õÊ¼»¯
-    /// </summary>
-    /// <exception cref="InvalidOperationException">µ±·şÎñÎ´³õÊ¼»¯Ê±Å×³ö</exception>
     private void EnsureInitialized()
     {
         if (!this._initialized)
@@ -655,15 +750,15 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
         }
     }
 
+    #endregion
+
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        // ÊÍ·ÅËùÓĞ·şÎñÆ÷Á¬½Ó
         foreach (ServerConnection connection in this._servers.Values)
         {
             try
             {
-                // ÊÍ·ÅMCP¿Í»§¶Ë£¨´«Êä²ãÓÉ¿Í»§¶Ë¹ÜÀí£©
                 await connection.Client.DisposeAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -672,49 +767,17 @@ public sealed class StdioToSseService : IStdioToSseService, IAsyncDisposable
             }
         }
 
-        // Çå¿Õ·şÎñÆ÷×Öµä
         this._servers.Clear();
     }
 
-    /// <summary>
-    /// ·şÎñÆ÷Á¬½ÓĞÅÏ¢
-    /// ·â×°µ¥¸öMCP·şÎñÆ÷µÄÁ¬½Ó×´Ì¬ºÍÔªÊı¾İ
-    /// </summary>
     private sealed class ServerConnection
     {
-        /// <summary>
-        /// »ñÈ¡»òÉèÖÃ·şÎñÆ÷Ãû³Æ
-        /// </summary>
         public required string Name { get; init; }
-
-        /// <summary>
-        /// »ñÈ¡»òÉèÖÃMCP¿Í»§¶ËÊµÀı
-        /// </summary>
         public required McpClient Client { get; init; }
-
-        /// <summary>
-        /// »ñÈ¡»òÉèÖÃStdio´«Êä²ãÊµÀı
-        /// </summary>
         public required StdioClientTransport Transport { get; init; }
-
-        /// <summary>
-        /// »ñÈ¡»òÉèÖÃ·şÎñÆ÷ĞÅÏ¢
-        /// </summary>
         public Implementation? ServerInfo { get; init; }
-
-        /// <summary>
-        /// »ñÈ¡»òÉèÖÃ·şÎñÆ÷ÄÜÁ¦
-        /// </summary>
         public ServerCapabilities? Capabilities { get; init; }
-
-        /// <summary>
-        /// »ñÈ¡»òÉèÖÃÁ¬½Ó×´Ì¬
-        /// </summary>
         public bool IsConnected { get; set; }
-
-        /// <summary>
-        /// »ñÈ¡»òÉèÖÃ×îºóÒ»´ÎĞÄÌøÊ±¼ä
-        /// </summary>
         public DateTime LastHeartbeat { get; set; }
     }
 }

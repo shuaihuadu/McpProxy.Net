@@ -3,6 +3,7 @@
 using McpProxy.Abstractions.Services;
 using McpProxy.Core.Configuration;
 using McpProxy.Core.Services;
+using McpProxy.StdioToSse.WebApi.Extensions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -61,119 +62,84 @@ builder.Services.Configure<StdioServersOptions>(options =>
     options.HealthCheckInterval = stdioOptions.HealthCheckInterval;
 });
 
-builder.Services.Configure<HttpServerOptions>(
-    builder.Configuration.GetSection("HttpServer"));
-
 // ==================== 服务注册 ====================
 
-// 核心服务
+// 注册核心服务 IStdioToSseService
 builder.Services.AddSingleton<IStdioToSseService, StdioToSseService>();
 
-// ASP.NET Core 服务
+// 注册 MCP Server（用于 MCP 原生协议）
+builder.Services.AddStdioToHttpMcpServer(builder.Configuration);
+
+// 添加 Controllers 支持（用于管理端点）
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger 配置
-builder.Services.AddSwaggerGen(options =>
+// 添加 Swagger（可选，开发环境推荐）
+if (builder.Environment.IsDevelopment())
 {
-    options.SwaggerDoc("v1", new()
+    builder.Services.AddSwaggerGen(options =>
     {
-        Title = "MCP Proxy API",
-        Version = "v1.0",
-        Description = "Convert Stdio MCP servers to HTTP/SSE endpoints",
-        Contact = new()
+        options.SwaggerDoc("v1", new()
         {
-            Name = "MCP Proxy",
-            Url = new Uri("https://github.com/shuaihuadu/mcp-proxy")
-        }
-    });
-
-    // 启用 XML 注释（如果存在）
-    string xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    string xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        options.IncludeXmlComments(xmlPath);
-    }
-
-    options.TagActionsBy(api => [api.GroupName ?? api.ActionDescriptor.RouteValues["controller"] ?? "Default"]);
-    options.DocInclusionPredicate((name, api) => true);
-});
-
-// CORS 配置
-HttpServerOptions? httpOptions = builder.Configuration
-    .GetSection("HttpServer")
-    .Get<HttpServerOptions>();
-
-if (httpOptions?.AllowedOrigins?.Count > 0)
-{
-    builder.Services.AddCors(options =>
-    {
-        options.AddDefaultPolicy(policy =>
-        {
-            if (httpOptions.AllowedOrigins.Contains("*"))
-            {
-                policy.AllowAnyOrigin()
-                      .AllowAnyHeader()
-                      .AllowAnyMethod();
-            }
-            else
-            {
-                policy.WithOrigins(httpOptions.AllowedOrigins.ToArray())
-                      .AllowAnyHeader()
-                      .AllowAnyMethod()
-                      .AllowCredentials();
-            }
+            Title = "MCP Proxy Management API",
+            Version = "v1.0",
+            Description = "Management endpoints for MCP Proxy HTTP/SSE Server"
         });
+
+        // 启用 XML 注释
+        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath))
+        {
+            options.IncludeXmlComments(xmlPath);
+        }
     });
 }
 
 // 健康检查
 builder.Services.AddHealthChecks();
 
-// 响应压缩
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-});
-
 // ==================== 应用构建 ====================
 
 WebApplication app = builder.Build();
 
-// 初始化 MCP 服务连接
-IStdioToSseService mcpService = app.Services.GetRequiredService<IStdioToSseService>();
-await mcpService.InitializeAsync(app.Lifetime.ApplicationStopping);
-
 // ==================== 中间件配置 ====================
 
-// Swagger UI (开发环境)
+// Swagger UI（开发环境）
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MCP Proxy API v1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MCP Proxy Management API v1");
         options.RoutePrefix = string.Empty; // Swagger UI at root
-        options.DocumentTitle = "MCP Proxy API";
-        options.DisplayRequestDuration();
     });
 }
 
-app.UseResponseCompression();
-
-if (httpOptions?.AllowedOrigins?.Count > 0)
-{
-    app.UseCors();
-}
-
-app.UseRouting();
+// 映射 Controllers（管理 API）
 app.MapControllers();
+
+// 映射 MCP 协议端点（/mcp）- 这会触发初始化
+app.MapStdioToHttpMcp();
+
+// 健康检查端点
 app.MapHealthChecks("/health");
 
 // ==================== 启动应用 ====================
 
-app.Logger.LogInformation("MCP Proxy Web API starting on {Urls} with {ServerCount} MCP server(s)", string.Join(", ", app.Urls), mcpServers.Count);
+app.Logger.LogInformation(
+    "MCP Proxy HTTP/SSE Server started with {ServerCount} backend server(s)",
+    mcpServers.Count);
+
+app.Logger.LogInformation("MCP endpoint: /mcp");
+app.Logger.LogInformation("Health check: /health");
+app.Logger.LogInformation("Server status: /api/servers");
+app.Logger.LogInformation("Capabilities: /api/capabilities");
+
+if (app.Environment.IsDevelopment())
+{
+    app.Logger.LogInformation("Swagger UI: / (root)");
+}
 
 await app.RunAsync();
 

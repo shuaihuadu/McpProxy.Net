@@ -4,7 +4,10 @@
     <PackageReference Include="Moq" />
     <PackageReference Include="MSTest" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +20,7 @@
 
   <ItemGroup>
     <Folder Include="Authentication\" />
+    <Folder Include="Configuration\" />
     <Folder Include="Services\" />
   </ItemGroup>
 

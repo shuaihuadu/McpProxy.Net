@@ -1,6 +1,5 @@
 // Copyright (c) IdeaTech. All rights reserved.
 
-using McpProxy.Abstractions.Models;
 using McpProxy.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using ModelContextProtocol.Protocol;
@@ -8,7 +7,7 @@ using ModelContextProtocol.Protocol;
 namespace McpProxy.StdioToSse.WebApi.Controllers;
 
 /// <summary>
-/// MCP 服务器管理相关 API
+/// MCP 代理服务器管理 API
 /// </summary>
 [ApiController]
 [Route("api")]
@@ -19,14 +18,16 @@ public class ManagementController : ControllerBase
     private readonly IStdioToSseService _service;
     private readonly ILogger<ManagementController> _logger;
 
-    public ManagementController(IStdioToSseService service, ILogger<ManagementController> logger)
+    public ManagementController(
+        IStdioToSseService service,
+        ILogger<ManagementController> logger)
     {
         this._service = service;
         this._logger = logger;
     }
 
     /// <summary>
-    /// 获取所有 MCP 服务器的状态
+    /// 获取所有后端 MCP 服务器状态
     /// </summary>
     /// <returns>服务器状态信息</returns>
     /// <response code="200">成功返回服务器状态</response>
@@ -36,7 +37,21 @@ public class ManagementController : ControllerBase
     {
         this._logger.LogDebug("Getting server status");
 
-        IReadOnlyList<ServerStatusInfo> servers = await this._service.GetServerStatusAsync();
+        var serverStatus = await this._service.GetServerStatusAsync();
+        var servers = serverStatus.Select(s => new
+        {
+            name = s.Name,
+            connected = s.IsConnected,
+            serverInfo = s.ServerName,
+            version = s.ServerVersion,
+            lastHeartbeat = s.LastHeartbeat,
+            capabilities = new
+            {
+                tools = s.Capabilities?.Tools != null,
+                prompts = s.Capabilities?.Prompts != null,
+                resources = s.Capabilities?.Resources != null
+            }
+        }).ToList();
 
         return this.Ok(new
         {
@@ -57,7 +72,7 @@ public class ManagementController : ControllerBase
     {
         this._logger.LogDebug("Getting aggregated capabilities");
 
-        ServerCapabilities capabilities = this._service.GetAggregatedCapabilities();
+        var capabilities = this._service.GetAggregatedCapabilities();
 
         return this.Ok(capabilities);
     }

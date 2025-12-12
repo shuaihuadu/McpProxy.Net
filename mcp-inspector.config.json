@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mcp-proxy": {
+      "url": "http://localhost:5000/mcp",
+      "transport": "sse"
+    }
+  }
+}

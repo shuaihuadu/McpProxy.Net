@@ -1,4 +1,5 @@
-﻿using ModelContextProtocol.Protocol;
+using ModelContextProtocol.Protocol;
+using ModelContextProtocol.Server;
 using McpProxy.Abstractions.Models;
 
 namespace McpProxy.Abstractions.Services;
@@ -68,4 +69,15 @@ public interface IStdioToSseService
     /// 获取聚合的服务器能力
     /// </summary>
     ServerCapabilities GetAggregatedCapabilities();
+
+    /// <summary>
+    /// 创建聚合的MCP服务器选项（用于MCP原生协议）
+    /// </summary>
+    /// <returns>配置好的服务器选项</returns>
+    McpServerOptions CreateAggregatedServerOptions();
+
+    /// <summary>
+    /// 获取所有服务器连接信息（用于管理端点）
+    /// </summary>
+    IReadOnlyCollection<(string Name, bool IsConnected, Implementation? ServerInfo, ServerCapabilities? Capabilities)> GetServerConnections();
 }
