@@ -1,19 +1,25 @@
-﻿using McpProxy;
+﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+
+using System.Reflection;
+using McpProxy;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add mcp server configuration
 builder.Configuration.AddJsonFile("mcp.json", optional: false, reloadOnChange: true);
 
-builder.Services.AddSingleton<IStdioToStreamableHttpService, ServerToolsHandler>();
+// Register MCP proxy service
+builder.Services.AddSingleton<IMcpProxyService, StdioToHttpProxyService>();
 
+// Register MCP server discovery strategy
 builder.Services.AddSingleton<IMcpServerDiscoveryStrategy, ConfigurationServerDiscoveryStrategy>();
 
+// Register MCP runtime
 builder.Services.AddSingleton<IMcpRuntime, McpRuntime>();
 
+// Configure stdio MCP server options
 builder.Services.Configure<StdioMcpServersOptions>(builder.Configuration);
 
 builder.Services.AddOptions<McpServerOptions>().Configure<IMcpRuntime>((mcpServerOptions, mcpRuntime) =>
@@ -31,8 +37,17 @@ builder.Services.AddOptions<McpServerOptions>().Configure<IMcpRuntime>((mcpServe
 
     mcpServerOptions.Handlers = new()
     {
+        // Tools
         CallToolHandler = mcpRuntime.CallToolHandler,
-        ListToolsHandler = mcpRuntime.ListToolsHandler
+        ListToolsHandler = mcpRuntime.ListToolsHandler,
+
+        // Prompts
+        GetPromptHandler = mcpRuntime.GetPromptHandler,
+        ListPromptsHandler = mcpRuntime.ListPromptsHandler,
+
+        // Resources
+        ListResourcesHandler = mcpRuntime.ListResourcesHandler,
+        ReadResourceHandler = mcpRuntime.ReadResourceHandler,
     };
 
     // TODO: Load from configuration or external source

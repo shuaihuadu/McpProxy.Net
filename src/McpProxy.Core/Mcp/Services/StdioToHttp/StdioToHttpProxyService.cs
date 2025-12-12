@@ -1,11 +1,13 @@
-﻿namespace McpProxy;
+﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+
+namespace McpProxy;
 
 /// <summary>
 /// 服务器工具处理器，使用指定的MCP服务器发现策略加载工具并通过MCP服务器公开工具
 /// </summary>
 /// <param name="serverDiscoveryStrategy">MCP服务器发现策略实例</param>
 /// <param name="logger">日志记录器实例</param>
-public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscoveryStrategy, ILogger<ServerToolsHandler> logger) : BaseMcpToolsHandler(logger)
+public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDiscoveryStrategy, ILogger<StdioToHttpProxyService> logger) : BaseStdioToHttpProxyService(logger)
 {
     /// <summary>
     /// 获取MCP服务器发现策略实例
@@ -38,7 +40,7 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
     public McpClientOptions ClientOptions { get; set; } = new McpClientOptions();
 
     /// <inheritdoc/>
-    public override async ValueTask<ListToolsResult> ListToolsAsync(string? mcpServerName = "", CancellationToken cancellationToken = default)
+    public override async ValueTask<ListToolsResult> ListToolsAsync(string? mcpServerName = null, string? cursor = null, CancellationToken cancellationToken = default)
     {
         // 确保已完成初始化
         await this.InitializeAsync(cancellationToken).ConfigureAwait(false);
@@ -61,7 +63,7 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
         // 遍历所有客户端，收集工具列表
         foreach (McpClient mcpClient in clientList)
         {
-            // 从客户端获取工具列表
+            // 从客户端获取工具列表（注意：当前SDK版本的ListToolsAsync不支持cursor参数）
             IList<McpClientTool> toolResult = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
             // 提取协议工具对象
@@ -74,11 +76,17 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
             }
         }
 
+        // TODO: 实现分页支持 - 当前忽略cursor参数
+        if (!string.IsNullOrEmpty(cursor))
+        {
+            this._logger.LogWarning("Pagination with cursor is not yet supported for tools listing.");
+        }
+
         return allToolResult;
     }
 
     /// <inheritdoc/>
-    public override async ValueTask<CallToolResult> CallToolsAsync(CallToolRequestParams? callToolRequestParams, CancellationToken cancellationToken = default)
+    public override async ValueTask<CallToolResult> CallToolAsync(CallToolRequestParams callToolRequestParams, CancellationToken cancellationToken = default)
     {
         // 验证参数是否为null
         if (callToolRequestParams == null)

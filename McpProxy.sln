@@ -19,10 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpProxy.Abstractions", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpProxy.Core", "src\McpProxy.Core\McpProxy.Core.csproj", "{C5CF0DA2-480F-E59D-CCB4-6D8BB16EF174}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{2F104123-D65D-4B67-A9EE-BE72C0F6615F}"
-	ProjectSection(SolutionItems) = preProject
-		doc\design.md = doc\design.md
-	EndProjectSection
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{2F104123-D65D-4B67-A9EE-BE72C0F6615F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{B548B434-C8F6-44DA-BC94-E213DE92BD9A}"
 EndProject

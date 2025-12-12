@@ -486,3 +486,4 @@ playwright-report/
 /python/.devcontainer/*
 /doc/dev_prompts/prompt.md
 /src/McpProxy.Server/mcp.json
+/docs/.archived/*
