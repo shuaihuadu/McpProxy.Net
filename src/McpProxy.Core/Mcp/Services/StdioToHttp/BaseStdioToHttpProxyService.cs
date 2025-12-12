@@ -92,27 +92,36 @@ public abstract class BaseStdioToHttpProxyService(ILogger logger) : IMcpProxySer
     }
 
     /// <inheritdoc />
-    public virtual ValueTask<ListPromptsResult> ListPromptsAsync(
+    public virtual async ValueTask<ListPromptsResult> ListPromptsAsync(
         RequestContext<ListPromptsRequestParams> request,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Prompts功能尚未在此处理器中实现");
+        // 从请求上下文提取参数并调用核心实现
+        return await this.ListPromptsAsync(
+            mcpServerName: null,
+            cursor: request.Params?.Cursor,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public virtual ValueTask<ListPromptsResult> ListPromptsAsync(
+    public virtual async ValueTask<ListPromptsResult> ListPromptsAsync(
         ListPromptsRequestParams listPromptsRequestParams,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Prompts功能尚未在此处理器中实现");
+        // 从参数对象提取参数并调用核心实现
+        return await this.ListPromptsAsync(
+            mcpServerName: null,
+            cursor: listPromptsRequestParams?.Cursor,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public virtual ValueTask<GetPromptResult> GetPromptAsync(
+    public virtual async ValueTask<GetPromptResult> GetPromptAsync(
         RequestContext<GetPromptRequestParams> request,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Prompts功能尚未在此处理器中实现");
+        // 从请求上下文中提取参数并调用重载方法
+        return await this.GetPromptAsync(request.Params!, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -135,27 +144,36 @@ public abstract class BaseStdioToHttpProxyService(ILogger logger) : IMcpProxySer
     }
 
     /// <inheritdoc />
-    public virtual ValueTask<ListResourcesResult> ListResourcesAsync(
+    public virtual async ValueTask<ListResourcesResult> ListResourcesAsync(
         RequestContext<ListResourcesRequestParams> request,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Resources功能尚未在此处理器中实现");
+        // 从请求上下文提取参数并调用核心实现
+        return await this.ListResourcesAsync(
+            mcpServerName: null,
+            cursor: request.Params?.Cursor,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public virtual ValueTask<ListResourcesResult> ListResourcesAsync(
+    public virtual async ValueTask<ListResourcesResult> ListResourcesAsync(
         ListResourcesRequestParams listResourcesRequestParams,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Resources功能尚未在此处理器中实现");
+        // 从参数对象提取参数并调用核心实现
+        return await this.ListResourcesAsync(
+            mcpServerName: null,
+            cursor: listResourcesRequestParams?.Cursor,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public virtual ValueTask<ReadResourceResult> ReadResourceAsync(
+    public virtual async ValueTask<ReadResourceResult> ReadResourceAsync(
         RequestContext<ReadResourceRequestParams> request,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Resources功能尚未在此处理器中实现");
+        // 从请求上下文中提取参数并调用重载方法
+        return await this.ReadResourceAsync(request.Params!, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -167,11 +185,12 @@ public abstract class BaseStdioToHttpProxyService(ILogger logger) : IMcpProxySer
     }
 
     /// <inheritdoc />
-    public virtual ValueTask SubscribeResourceAsync(
+    public virtual async ValueTask SubscribeResourceAsync(
         RequestContext<SubscribeRequestParams> request,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Resources订阅功能尚未在此处理器中实现");
+        // 从请求上下文中提取参数并调用重载方法
+        await this.SubscribeResourceAsync(request.Params!, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -183,11 +202,12 @@ public abstract class BaseStdioToHttpProxyService(ILogger logger) : IMcpProxySer
     }
 
     /// <inheritdoc />
-    public virtual ValueTask UnsubscribeResourceAsync(
+    public virtual async ValueTask UnsubscribeResourceAsync(
         RequestContext<UnsubscribeRequestParams> request,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Resources取消订阅功能尚未在此处理器中实现");
+        // 从请求上下文中提取参数并调用重载方法
+        await this.UnsubscribeResourceAsync(request.Params!, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
