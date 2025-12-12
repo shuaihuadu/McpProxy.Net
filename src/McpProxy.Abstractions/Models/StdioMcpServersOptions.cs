@@ -1,9 +1,10 @@
 ﻿namespace McpProxy;
 
 /// <summary>
-/// 命名的MCP服务器集合的配置选项
+/// stdio传输类型的MCP服务器集合配置选项
+/// 包含从配置文件（如mcp.json）加载的服务器定义
 /// </summary>
-public class NamedMcpServersOptions
+public class StdioMcpServersOptions
 {
     /// <summary>
     /// 获取mcp server的配置节名称
@@ -14,5 +15,5 @@ public class NamedMcpServersOptions
     /// 获取或设置服务器配置的字典，以服务器名称为键
     /// </summary>
     [JsonPropertyName("servers")]
-    public Dictionary<string, NamedMcpServerInfo>? Servers { get; set; }
+    public Dictionary<string, StdioMcpServer>? Servers { get; set; }
 }

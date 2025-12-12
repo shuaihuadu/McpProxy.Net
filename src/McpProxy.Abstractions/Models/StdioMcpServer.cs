@@ -3,7 +3,7 @@
 /// <summary>
 /// 包含在mcp.json中定义的MCP服务器的配置信息
 /// </summary>
-public class NamedMcpServerInfo
+public class StdioMcpServer
 {
     /// <summary>
     /// 默认超时时间（秒）

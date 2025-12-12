@@ -1,11 +1,12 @@
 ﻿namespace McpProxy;
 
 /// <summary>
-/// 提供基于命名MCP服务器配置的MCP服务器实现，支持stdio传输机制
+/// 提供基于stdio传输的MCP服务器实现
+/// 此提供者从配置中加载服务器信息，并使用stdio传输机制与MCP服务器通信
 /// </summary>
 /// <param name="id">MCP服务器的唯一标识符</param>
 /// <param name="serverInfo">MCP服务器配置信息</param>
-public class NamedMcpServerProvider(string id, NamedMcpServerInfo serverInfo) : IMcpServerProvider
+public class StdioMcpServerProvider(string id, StdioMcpServer serverInfo) : IMcpServerProvider
 {
     /// <summary>
     /// 获取MCP服务器的唯一标识符
@@ -15,7 +16,7 @@ public class NamedMcpServerProvider(string id, NamedMcpServerInfo serverInfo) : 
     /// <summary>
     /// 获取MCP服务器配置信息
     /// </summary>
-    private readonly NamedMcpServerInfo _serverInfo = serverInfo ?? throw new ArgumentNullException(nameof(serverInfo));
+    private readonly StdioMcpServer _serverInfo = serverInfo ?? throw new ArgumentNullException(nameof(serverInfo));
 
     /// <inheritdoc/>
     public McpServerMetadata CreateMetadata()
@@ -35,7 +36,7 @@ public class NamedMcpServerProvider(string id, NamedMcpServerInfo serverInfo) : 
         // 验证命令是否存在（stdio传输必需）
         if (string.IsNullOrWhiteSpace(this._serverInfo.Command))
         {
-            throw new InvalidOperationException($"Named server '{this._id}' does not have a valid command for stdio transport.");
+            throw new InvalidOperationException($"Server '{this._id}' does not have a valid command for stdio transport.");
         }
 
         // 收集环境变量：首先从系统环境变量获取

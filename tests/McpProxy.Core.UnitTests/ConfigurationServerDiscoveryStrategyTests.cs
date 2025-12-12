@@ -1,10 +1,10 @@
 ﻿namespace McpProxy.Core.UnitTests;
 
 /// <summary>
-/// InFileNamedMcpServerDiscoveryStrategy类的单元测试
+/// ConfigurationServerDiscoveryStrategy类的单元测试
 /// </summary>
 [TestClass]
-public sealed class InFileNamedMcpServerDiscoveryStrategyTests
+public sealed class ConfigurationServerDiscoveryStrategyTests
 {
     /// <summary>
     /// 获取或设置测试上下文
@@ -14,7 +14,7 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
     /// <summary>
     /// 创建用于测试的配置选项
     /// </summary>
-    private static Microsoft.Extensions.Options.IOptions<NamedMcpServersOptions> CreateOptions(NamedMcpServersOptions options)
+    private static Microsoft.Extensions.Options.IOptions<StdioMcpServersOptions> CreateOptions(StdioMcpServersOptions options)
     {
         return Microsoft.Extensions.Options.Options.Create(options);
     }
@@ -22,13 +22,13 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
     /// <summary>
     /// 创建用于测试的日志记录器
     /// </summary>
-    private static Microsoft.Extensions.Logging.ILogger<InFileNamedMcpServerDiscoveryStrategy> CreateLogger()
+    private static Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> CreateLogger()
     {
         Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
         {
             // 简单的日志配置
         });
-        return loggerFactory.CreateLogger(typeof(InFileNamedMcpServerDiscoveryStrategy).FullName ?? "Test") as Microsoft.Extensions.Logging.ILogger<InFileNamedMcpServerDiscoveryStrategy> ?? null!;
+        return loggerFactory.CreateLogger(typeof(ConfigurationServerDiscoveryStrategy).FullName ?? "Test") as Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> ?? null!;
     }
 
     /// <summary>
@@ -38,14 +38,14 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
     public async Task DiscoverServersAsync_WithNoServers_ReturnsEmptyCollection()
     {
         // Arrange
-        NamedMcpServersOptions options = new()
+        StdioMcpServersOptions options = new()
         {
             Servers = null
         };
 
-        Microsoft.Extensions.Options.IOptions<NamedMcpServersOptions> optionsWrapper = CreateOptions(options);
-        Microsoft.Extensions.Logging.ILogger<InFileNamedMcpServerDiscoveryStrategy> logger = CreateLogger();
-        InFileNamedMcpServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
+        Microsoft.Extensions.Options.IOptions<StdioMcpServersOptions> optionsWrapper = CreateOptions(options);
+        Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> logger = CreateLogger();
+        ConfigurationServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
 
         // Act
         IEnumerable<IMcpServerProvider> result = await strategy.DiscoverServersAsync(this.TestContext.CancellationToken);
@@ -62,11 +62,11 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
     public async Task DiscoverServersAsync_WithConfiguredServers_ReturnsCorrectProviders()
     {
         // Arrange
-        Dictionary<string, NamedMcpServerInfo> servers = new()
+        Dictionary<string, StdioMcpServer> servers = new()
         {
             {
                 "server1",
-                new NamedMcpServerInfo
+                new StdioMcpServer
                 {
                     Name = "Server 1",
                     Command = "test-command",
@@ -75,7 +75,7 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
             },
             {
                 "server2",
-                new NamedMcpServerInfo
+                new StdioMcpServer
                 {
                     Name = "Server 2",
                     Command = "test-command2",
@@ -84,14 +84,14 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
             }
         };
 
-        NamedMcpServersOptions options = new()
+        StdioMcpServersOptions options = new()
         {
             Servers = servers
         };
 
-        Microsoft.Extensions.Options.IOptions<NamedMcpServersOptions> optionsWrapper = CreateOptions(options);
-        Microsoft.Extensions.Logging.ILogger<InFileNamedMcpServerDiscoveryStrategy> logger = CreateLogger();
-        InFileNamedMcpServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
+        Microsoft.Extensions.Options.IOptions<StdioMcpServersOptions> optionsWrapper = CreateOptions(options);
+        Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> logger = CreateLogger();
+        ConfigurationServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
 
         // Act
         IEnumerable<IMcpServerProvider> result = await strategy.DiscoverServersAsync(this.TestContext.CancellationToken);
@@ -108,11 +108,11 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
     public async Task DiscoverServersAsync_WithDisabledServers_FiltersDisabledServers()
     {
         // Arrange
-        Dictionary<string, NamedMcpServerInfo> servers = new()
+        Dictionary<string, StdioMcpServer> servers = new()
         {
             {
                 "server1",
-                new NamedMcpServerInfo
+                new StdioMcpServer
                 {
                     Name = "Server 1",
                     Command = "test-command",
@@ -122,7 +122,7 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
             },
             {
                 "server2",
-                new NamedMcpServerInfo
+                new StdioMcpServer
                 {
                     Name = "Server 2",
                     Command = "test-command2",
@@ -132,7 +132,7 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
             },
             {
                 "server3",
-                new NamedMcpServerInfo
+                new StdioMcpServer
                 {
                     Name = "Server 3",
                     Command = "test-command3",
@@ -142,14 +142,14 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
             }
         };
 
-        NamedMcpServersOptions options = new()
+        StdioMcpServersOptions options = new()
         {
             Servers = servers
         };
 
-        Microsoft.Extensions.Options.IOptions<NamedMcpServersOptions> optionsWrapper = CreateOptions(options);
-        Microsoft.Extensions.Logging.ILogger<InFileNamedMcpServerDiscoveryStrategy> logger = CreateLogger();
-        InFileNamedMcpServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
+        Microsoft.Extensions.Options.IOptions<StdioMcpServersOptions> optionsWrapper = CreateOptions(options);
+        Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> logger = CreateLogger();
+        ConfigurationServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
 
         // Act
         IEnumerable<IMcpServerProvider> result = await strategy.DiscoverServersAsync(this.TestContext.CancellationToken);
@@ -166,11 +166,11 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
     public async Task DiscoverServersAsync_WithEnabledAndNullEnabledServers_IncludesAll()
     {
         // Arrange
-        Dictionary<string, NamedMcpServerInfo> servers = new()
+        Dictionary<string, StdioMcpServer> servers = new()
         {
             {
                 "server1",
-                new NamedMcpServerInfo
+                new StdioMcpServer
                 {
                     Name = "Server 1",
                     Command = "test-command",
@@ -180,7 +180,7 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
             },
             {
                 "server2",
-                new NamedMcpServerInfo
+                new StdioMcpServer
                 {
                     Name = "Server 2",
                     Command = "test-command2",
@@ -190,14 +190,14 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
             }
         };
 
-        NamedMcpServersOptions options = new()
+        StdioMcpServersOptions options = new()
         {
             Servers = servers
         };
 
-        Microsoft.Extensions.Options.IOptions<NamedMcpServersOptions> optionsWrapper = CreateOptions(options);
-        Microsoft.Extensions.Logging.ILogger<InFileNamedMcpServerDiscoveryStrategy> logger = CreateLogger();
-        InFileNamedMcpServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
+        Microsoft.Extensions.Options.IOptions<StdioMcpServersOptions> optionsWrapper = CreateOptions(options);
+        Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> logger = CreateLogger();
+        ConfigurationServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
 
         // Act
         IEnumerable<IMcpServerProvider> result = await strategy.DiscoverServersAsync(this.TestContext.CancellationToken);
@@ -218,11 +218,11 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
         string serverName = "Test Server";
         string serverDescription = "Test Description";
 
-        Dictionary<string, NamedMcpServerInfo> servers = new()
+        Dictionary<string, StdioMcpServer> servers = new()
         {
             {
                 serverId,
-                new NamedMcpServerInfo
+                new StdioMcpServer
                 {
                     Name = serverName,
                     Command = "test-command",
@@ -231,14 +231,14 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
             }
         };
 
-        NamedMcpServersOptions options = new()
+        StdioMcpServersOptions options = new()
         {
             Servers = servers
         };
 
-        Microsoft.Extensions.Options.IOptions<NamedMcpServersOptions> optionsWrapper = CreateOptions(options);
-        Microsoft.Extensions.Logging.ILogger<InFileNamedMcpServerDiscoveryStrategy> logger = CreateLogger();
-        InFileNamedMcpServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
+        Microsoft.Extensions.Options.IOptions<StdioMcpServersOptions> optionsWrapper = CreateOptions(options);
+        Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> logger = CreateLogger();
+        ConfigurationServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
 
         // Act
         IEnumerable<IMcpServerProvider> result = await strategy.DiscoverServersAsync(this.TestContext.CancellationToken);
@@ -259,14 +259,14 @@ public sealed class InFileNamedMcpServerDiscoveryStrategyTests
     public async Task DisposeAsync_DisposesResourcesCorrectly()
     {
         // Arrange
-        NamedMcpServersOptions options = new()
+        StdioMcpServersOptions options = new()
         {
-            Servers = new Dictionary<string, NamedMcpServerInfo>()
+            Servers = new Dictionary<string, StdioMcpServer>()
         };
 
-        Microsoft.Extensions.Options.IOptions<NamedMcpServersOptions> optionsWrapper = CreateOptions(options);
-        Microsoft.Extensions.Logging.ILogger<InFileNamedMcpServerDiscoveryStrategy> logger = CreateLogger();
-        InFileNamedMcpServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
+        Microsoft.Extensions.Options.IOptions<StdioMcpServersOptions> optionsWrapper = CreateOptions(options);
+        Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> logger = CreateLogger();
+        ConfigurationServerDiscoveryStrategy strategy = new(optionsWrapper, logger);
 
         // Act
         await strategy.DisposeAsync();

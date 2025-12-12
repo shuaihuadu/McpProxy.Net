@@ -1,12 +1,10 @@
-﻿using ModelContextProtocol.Client;
-
-namespace McpProxy.Core.UnitTests;
+﻿namespace McpProxy.Core.UnitTests;
 
 /// <summary>
-/// NamedMcpServerProvider类的单元测试
+/// StdioMcpServerProvider类的单元测试
 /// </summary>
 [TestClass]
-public sealed class NamedMcpServerProviderTests
+public sealed class StdioMcpServerProviderTests
 {
     /// <summary>
     /// 获取或设置测试上下文
@@ -21,18 +19,18 @@ public sealed class NamedMcpServerProviderTests
     {
         // Arrange
         string testId = "testProvider";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Description = "Test Description",
             Command = "test-command"
         };
 
         // Act
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Assert
         Assert.IsNotNull(provider);
-        Assert.IsInstanceOfType<NamedMcpServerProvider>(provider);
+        Assert.IsInstanceOfType<StdioMcpServerProvider>(provider);
     }
 
     /// <summary>
@@ -42,7 +40,7 @@ public sealed class NamedMcpServerProviderTests
     public void Constructor_WithNullId_ThrowsArgumentNullException()
     {
         // Arrange
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Description = "Test Description",
             Command = "test-command"
@@ -51,7 +49,7 @@ public sealed class NamedMcpServerProviderTests
         // Act & Assert
         try
         {
-            NamedMcpServerProvider provider = new(null!, serverInfo);
+            StdioMcpServerProvider provider = new(null!, serverInfo);
             Assert.Fail("Expected ArgumentNullException was not thrown.");
         }
         catch (ArgumentNullException)
@@ -72,7 +70,7 @@ public sealed class NamedMcpServerProviderTests
         // Act & Assert
         try
         {
-            NamedMcpServerProvider provider = new(testId, null!);
+            StdioMcpServerProvider provider = new(testId, null!);
             Assert.Fail("Expected ArgumentNullException was not thrown.");
         }
         catch (ArgumentNullException)
@@ -89,12 +87,12 @@ public sealed class NamedMcpServerProviderTests
     {
         // Arrange
         string testId = "testProvider";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Description = "Test Description",
             Command = "test-command"
         };
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Act
         McpServerMetadata metadata = provider.CreateMetadata();
@@ -115,12 +113,12 @@ public sealed class NamedMcpServerProviderTests
     {
         // Arrange
         string testId = "testProvider";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Description = null,
             Command = "test-command"
         };
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Act
         McpServerMetadata metadata = provider.CreateMetadata();
@@ -142,13 +140,13 @@ public sealed class NamedMcpServerProviderTests
         // Arrange
         string testId = "testProvider";
         string testTitle = "Test Provider Display Name";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Title = testTitle,
             Description = "Test Description",
             Command = "test-command"
         };
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Act
         McpServerMetadata metadata = provider.CreateMetadata();
@@ -170,13 +168,13 @@ public sealed class NamedMcpServerProviderTests
         // Arrange
         string testId = "testProvider";
         string customName = "Custom Server Name";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Name = customName,
             Description = "Test Description",
             Command = "test-command"
         };
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Act
         McpServerMetadata metadata = provider.CreateMetadata();
@@ -195,12 +193,12 @@ public sealed class NamedMcpServerProviderTests
     {
         // Arrange
         string testId = "invalidProvider";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Description = "Invalid Provider - No Command",
             Command = ""
         };
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Act & Assert
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -217,13 +215,13 @@ public sealed class NamedMcpServerProviderTests
     {
         // Arrange
         string testId = "invalidStdioProvider";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Description = "Invalid Stdio Provider - No Command",
             Type = "stdio",
             Command = null!
         };
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Act & Assert
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -240,7 +238,7 @@ public sealed class NamedMcpServerProviderTests
     {
         // Arrange
         string testId = "envProvider";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Description = "Test Env Provider",
             Type = "stdio",
@@ -251,7 +249,7 @@ public sealed class NamedMcpServerProviderTests
                 { "TEST_VAR", "test value" }
             }
         };
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Act & Assert
         // 由于配置的命令是 echo "hello world"，该命令不会失败，因此我们预期客户端能够成功创建
@@ -270,7 +268,7 @@ public sealed class NamedMcpServerProviderTests
     {
         // Arrange
         string testId = "stdioProvider";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Type = "stdio",
             Command = "npx",
@@ -278,7 +276,7 @@ public sealed class NamedMcpServerProviderTests
             Description = "Test Stdio Provider"
         };
 
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Act
         McpClient client = await provider.CreateClientAsync(new McpClientOptions(), this.TestContext.CancellationToken);
@@ -297,7 +295,7 @@ public sealed class NamedMcpServerProviderTests
         // Arrange
         string testId = "cwdProvider";
         string customWorkingDirectory = "C:\\test";
-        NamedMcpServerInfo serverInfo = new()
+        StdioMcpServer serverInfo = new()
         {
             Type = "stdio",
             Command = "npx",
@@ -306,7 +304,7 @@ public sealed class NamedMcpServerProviderTests
             Cwd = customWorkingDirectory
         };
 
-        NamedMcpServerProvider provider = new(testId, serverInfo);
+        StdioMcpServerProvider provider = new(testId, serverInfo);
 
         // Act
         McpClient client = await provider.CreateClientAsync(new McpClientOptions(), this.TestContext.CancellationToken);
