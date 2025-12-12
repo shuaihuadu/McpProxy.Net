@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/appsettings.json",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning",
+      "Microsoft.AspNetCore": "Warning",
+      "McpProxy": "Information"
+    }
+  },
+  "HttpServer": {
+    "Host": "0.0.0.0",
+    "Port": 3000,
+    "AllowedOrigins": [
+      "https://yourdomain.com",
+      "https://app.yourdomain.com"
+    ]
+  },
+  "StdioServers": {
+    "UseNamespacePrefix": true,
+    "AutoReconnect": true
+  }
+}
+

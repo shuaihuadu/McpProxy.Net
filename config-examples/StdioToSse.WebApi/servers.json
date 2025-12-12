@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json.schemastore.org/appsettings.json",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "McpProxy": "Debug"
+    }
+  },
+  "AllowedHosts": "*",
+  "HttpServer": {
+    "Host": "localhost",
+    "Port": 3000,
+    "AllowedOrigins": [ "*" ]
+  },
+  "StdioServers": {
+    "Servers": [
+      {
+        "Name": "filesystem",
+        "Command": "npx",
+        "Arguments": [ "-y", "@modelcontextprotocol/server-filesystem", "/path/to/directory" ],
+        "Enabled": true
+      },
+      {
+        "Name": "github",
+        "Command": "npx",
+        "Arguments": [ "-y", "@modelcontextprotocol/server-github" ],
+        "Environment": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+        },
+        "Enabled": true
+      },
+      {
+        "Name": "fetch",
+        "Command": "npx",
+        "Arguments": [ "-y", "@modelcontextprotocol/server-fetch" ],
+        "Enabled": true
+      }
+    ],
+    "UseNamespacePrefix": true,
+    "AllowServerFilter": true,
+    "AutoReconnect": true
+  }
+}
+

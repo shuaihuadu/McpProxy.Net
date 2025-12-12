@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>mcp-proxy</AssemblyName>
+    <Version>1.0.0</Version>
+    <Description>MCP Proxy - Protocol conversion tool for Model Context Protocol</Description>
+    <Authors>Your Name</Authors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\McpProxy.Core\McpProxy.Core.csproj" />
+    <ProjectReference Include="..\McpProxy.Abstractions\McpProxy.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

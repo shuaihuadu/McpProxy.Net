@@ -1,40 +1,37 @@
-<Project>
+﻿<Project>
+  
+  <!-- 启用中央包管理 -->
   <PropertyGroup>
-    <!-- Enable central package management -->
-    <!-- https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <TargetFramework>net10.0</TargetFramework>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
+
   <ItemGroup>
+    <!-- Microsoft 基础包 -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Systemd" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
+    
+    <!-- ASP.NET Core 包 -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    
+    <!-- 命令行解析 -->
+    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    
+    <!-- Swagger/OpenAPI -->
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.0.1" />
+    
+    <!-- Model Context Protocol -->
+    <PackageVersion Include="ModelContextProtocol" Version="0.5.0-preview.1" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.5.0-preview.1" />
+    
+    <!-- 测试包 -->
+    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="MSTest" Version="4.0.2" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageVersion Include="IdeaTech.CandyBox" Version="1.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.4.0-preview.3" />
-    <PackageVersion Include="ModelContextProtocol.Core" Version="0.4.0-preview.3" />
-    <PackageVersion Include="MSTest.TestAdapter" Version="4.0.2" />
-    <PackageVersion Include="MSTest.TestFramework" Version="4.0.2" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.0.1" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.0.1" />
-    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Maui.Essentials" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
-    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.3.2" />
-    <PackageVersion Include="CommunityToolkit.Maui" Version="11.1.1" />
-    <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="8.0.8" />
-    <PackageVersion Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
-    <PackageVersion Include="Syncfusion.Maui.Toolkit" Version="1.0.7" />
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.5.0" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.0.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.0.0" />
-  </ItemGroup>
+
 </Project>

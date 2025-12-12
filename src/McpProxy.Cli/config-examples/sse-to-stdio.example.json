@@ -1,0 +1,24 @@
+﻿{
+  "Mode": "SseToStdio",
+  "SseClient": {
+    "Url": "https://example.com/mcp/sse",
+
+    // 方式1：直接在Headers中指定Bearer Token
+    "Headers": {
+      "Authorization": "Bearer YOUR_API_TOKEN_HERE"
+    },
+
+    // 方式2：使用AccessToken属性（也可以通过环境变量 API_ACCESS_TOKEN 设置）
+    // "AccessToken": "YOUR_API_TOKEN_HERE",
+
+    // 方式3：使用OAuth2客户端凭据流（Client Credentials Flow）
+    // "OAuth2": {
+    //     "ClientId": "your-client-id",
+    //     "ClientSecret": "your-client-secret",
+    //     "TokenUrl": "https://auth.example.com/oauth/token",
+    //     "Scope": "api.read api.write"  // 可选
+    // },
+
+    "VerifySsl": true
+  }
+}

@@ -1,0 +1,20 @@
+﻿{
+  "$schema": "https://json.schemastore.org/appsettings.json",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.Hosting.Lifetime": "Information",
+      "McpProxy": "Debug"
+    }
+  },
+  "SseClient": {
+    "Url": "https://api.example.com/mcp/sse",
+    "OAuth2": {
+      "ClientId": "${OAUTH_CLIENT_ID}",
+      "ClientSecret": "${OAUTH_CLIENT_SECRET}",
+      "TokenUrl": "https://auth.example.com/oauth2/token",
+      "Scope": "mcp.read mcp.write"
+    },
+    "VerifySsl": true
+  }
+}

@@ -1,0 +1,23 @@
+﻿{
+    "Mode": "StdioToHttp",
+    "McpServers": [
+        {
+            "Command": "npx",
+            "Arguments": [
+                "-y",
+                "@modelcontextprotocol/server-everything"
+            ],
+            "Environment": {
+                "NODE_ENV": "production"
+            }
+        }
+    ],
+    "HttpServer": {
+        "Host": "localhost",
+        "Port": 3000,
+        "Stateless": false,
+        "AllowedOrigins": [
+            "*"
+        ]
+    }
+}

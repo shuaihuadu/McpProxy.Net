@@ -1,0 +1,56 @@
+{
+    "Mode": "StdioToHttp",
+    "McpServers": [
+        {
+            "Name": "filesystem",
+            "Command": "npx",
+            "Arguments": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "C:\\Users"
+            ],
+            "Enabled": true
+        },
+        {
+            "Name": "github",
+            "Command": "npx",
+            "Arguments": [
+                "-y",
+                "@modelcontextprotocol/server-github"
+            ],
+            "Environment": {
+                "GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_token_here"
+            },
+            "Enabled": true
+        },
+        {
+            "Name": "postgres",
+            "Command": "npx",
+            "Arguments": [
+                "-y",
+                "@modelcontextprotocol/server-postgres",
+                "postgresql://user:password@localhost/dbname"
+            ],
+            "Enabled": false
+        }
+    ],
+    "UseNamespacePrefix": true,
+    "AllowServerFilter": true,
+    "AutoReconnect": true,
+    "HealthCheckInterval": 30,
+    "HttpServer": {
+        "Host": "localhost",
+        "Port": 8080,
+        "AllowedOrigins": [
+            "http://localhost:3000",
+            "http://localhost:5173"
+        ]
+    },
+    "Logging": {
+        "LogLevel": {
+            "Default": "Information",
+            "Microsoft": "Warning",
+            "System": "Warning"
+        }
+    }
+}

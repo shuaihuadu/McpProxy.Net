@@ -461,6 +461,7 @@ env/
 venv/
 myvenv/
 ENV/
+.venv*/
 
 # Python dist
 dist/
@@ -482,7 +483,27 @@ conf.properties
 # Playwright
 playwright-report/
 
+# Static Web App deployment config
+swa-cli.config.json
+**/copilot-chat-app/webapp/build
+**/copilot-chat-app/webapp/node_modules
+**/copilot-chat-app/webapi/data/eng.traineddata
+
+# Semantic Kernel Tools
+/.semantic-kernel
+
 # python devcontainer
 /python/.devcontainer/*
-/doc/dev_prompts/prompt.md
-/src/McpProxy.Server/mcp.json
+.docker/
+/src/core/providers/persistence/sqlserver/IdeaTech.Floway.Persistence.SqlServer.Migrations/Migrations
+/src/app/core/providers/persistence/sqlserver/IdeaTech.Floway.App.Persistence.SqlServer.Migrations/Migrations
+/src/app/webapi/IdeaTech.Floway.WebApi/Uploads
+/src/app/webapp/.env.local
+/src/app/webapp/.env.staging
+/deploy/docs/init_users.sql
+/src/app/webapi/IdeaTech.Floway.WebApi/appsettings.Development.json
+/src/mcp/servers/IdeaTech.MCP.Server/Uploads/Default/20251001
+/docker/.pv/*
+/docker/.pv/mssql/data/Entropy.bin
+/docker/.pv/mssql/data/Entropy.bin
+/src/app/webapp/.env.dev

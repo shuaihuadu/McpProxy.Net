@@ -1,0 +1,28 @@
+﻿{
+  "Mode": "StdioToHttp",
+  "StdioClient": {
+    "Command": "npx",
+    "Arguments": [
+      "-y",
+      "@modelcontextprotocol/server-everything"
+    ],
+    "Environment": {
+      "NODE_ENV": "development"
+    }
+  },
+  "HttpServer": {
+    "Host": "localhost",
+    "Port": 8080,
+    "Stateless": false,
+    "AllowedOrigins": [
+      "*"
+    ]
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "McpProxy": "Debug"
+    }
+  }
+}

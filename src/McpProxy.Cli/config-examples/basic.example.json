@@ -1,0 +1,10 @@
+﻿{
+  "Mode": "SseToStdio",
+  "SseClient": {
+    "Url": "http://localhost:3000/sse",
+    "Headers": {
+      "Authorization": "Bearer your-token-here"
+    },
+    "VerifySsl": true
+  }
+}

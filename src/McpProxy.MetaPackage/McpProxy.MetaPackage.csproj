@@ -1,9 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<AssemblyName>IdeaTech.McpProxy</AssemblyName>
-	</PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\McpProxy.Core\McpProxy.Core.csproj" PrivateAssets="none" />
-  </ItemGroup>
-	<Import Project="$(SolutionDir)/NuGet.props" />
-</Project>

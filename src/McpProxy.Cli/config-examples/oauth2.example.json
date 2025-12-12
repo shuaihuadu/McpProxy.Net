@@ -1,0 +1,21 @@
+﻿{
+  "Mode": "SseToStdio",
+  "SseClient": {
+    "Url": "https://api.example.com/mcp/sse",
+    // OAuth2客户端凭据流认证
+    "OAuth2": {
+      "ClientId": "your-client-id",
+      "ClientSecret": "your-client-secret",
+      "TokenUrl": "https://auth.example.com/oauth2/token",
+      "Scope": "api.read api.write" // 可选，根据API要求设置
+    },
+    "VerifySsl": true
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "McpProxy": "Debug"
+    }
+  }
+}

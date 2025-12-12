@@ -1,0 +1,16 @@
+﻿{
+  "$schema": "https://json.schemastore.org/appsettings.json",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "McpProxy": "Trace"
+    }
+  },
+  "SseClient": {
+    "Url": "https://localhost:5001/mcp/sse",
+    "Headers": {
+      "Authorization": "Bearer dev-token"
+    },
+    "VerifySsl": false
+  }
+}
