@@ -1,4 +1,4 @@
-﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+// Copyright (c) ShuaiHua Du. All rights reserved.
 
 using System.Reflection;
 using McpProxy;
@@ -16,13 +16,10 @@ builder.Services.AddSingleton<IMcpProxyService, StdioToHttpProxyService>();
 // Register MCP server discovery strategy
 builder.Services.AddSingleton<IMcpServerDiscoveryStrategy, ConfigurationServerDiscoveryStrategy>();
 
-// Register MCP runtime
-builder.Services.AddSingleton<IMcpRuntime, McpRuntime>();
-
 // Configure stdio MCP server options
 builder.Services.Configure<StdioMcpServersOptions>(builder.Configuration);
 
-builder.Services.AddOptions<McpServerOptions>().Configure<IMcpRuntime>((mcpServerOptions, mcpRuntime) =>
+builder.Services.AddOptions<McpServerOptions>().Configure<IMcpProxyService>((mcpServerOptions, proxyService) =>
 {
     var entryAssembly = Assembly.GetEntryAssembly();
     var assemblyName = entryAssembly?.GetName();
@@ -37,17 +34,17 @@ builder.Services.AddOptions<McpServerOptions>().Configure<IMcpRuntime>((mcpServe
 
     mcpServerOptions.Handlers = new()
     {
-        // Tools
-        CallToolHandler = mcpRuntime.CallToolHandler,
-        ListToolsHandler = mcpRuntime.ListToolsHandler,
+        CallToolHandler = (request, cancellationToken) => proxyService.CallToolAsync(request, cancellationToken),
 
-        // Prompts
-        GetPromptHandler = mcpRuntime.GetPromptHandler,
-        ListPromptsHandler = mcpRuntime.ListPromptsHandler,
+        ListToolsHandler = (request, cancellationToken) => proxyService.ListToolsAsync(request, cancellationToken),
 
-        // Resources
-        ListResourcesHandler = mcpRuntime.ListResourcesHandler,
-        ReadResourceHandler = mcpRuntime.ReadResourceHandler,
+        GetPromptHandler = (request, cancellationToken) => proxyService.GetPromptAsync(request, cancellationToken),
+
+        ListPromptsHandler = (request, cancellationToken) => proxyService.ListPromptsAsync(request, cancellationToken),
+
+        ListResourcesHandler = (request, cancellationToken) => proxyService.ListResourcesAsync(request, cancellationToken),
+
+        ReadResourceHandler = (request, cancellationToken) => proxyService.ReadResourceAsync(request, cancellationToken),
     };
 
     // TODO: Load from configuration or external source
