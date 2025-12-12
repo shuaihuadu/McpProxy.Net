@@ -24,11 +24,8 @@ public sealed class ConfigurationServerDiscoveryStrategyTests
     /// </summary>
     private static Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> CreateLogger()
     {
-        Microsoft.Extensions.Logging.ILoggerFactory loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
-        {
-            // 简单的日志配置
-        });
-        return loggerFactory.CreateLogger(typeof(ConfigurationServerDiscoveryStrategy).FullName ?? "Test") as Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy> ?? null!;
+        var mock = new Moq.Mock<Microsoft.Extensions.Logging.ILogger<ConfigurationServerDiscoveryStrategy>>();
+        return mock.Object;
     }
 
     /// <summary>

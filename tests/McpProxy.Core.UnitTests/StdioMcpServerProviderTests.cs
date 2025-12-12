@@ -1,4 +1,6 @@
-﻿namespace McpProxy.Core.UnitTests;
+﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+
+namespace McpProxy.Core.UnitTests;
 
 /// <summary>
 /// StdioMcpServerProvider类的单元测试
@@ -294,7 +296,7 @@ public sealed class StdioMcpServerProviderTests
     {
         // Arrange
         string testId = "cwdProvider";
-        string customWorkingDirectory = "C:\\test";
+        string customWorkingDirectory = "C:\\Windows\\temp";
         StdioMcpServer serverInfo = new()
         {
             Type = "stdio",
