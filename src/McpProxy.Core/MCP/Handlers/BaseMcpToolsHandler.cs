@@ -26,10 +26,16 @@ public abstract class BaseMcpToolsHandler(ILogger logger) : IMcpToolsHandler
     private bool _disposed = false;
 
     /// <inheritdoc/>
-    public abstract ValueTask<ListToolsResult> ListToolsAsync(RequestContext<ListToolsRequestParams> request, CancellationToken cancellationToken = default);
+    public abstract ValueTask<ListToolsResult> ListToolsAsync(string? mcpServerName = "", CancellationToken cancellationToken = default);
 
     /// <inheritdoc/>
-    public abstract ValueTask<CallToolResult> CallToolsAsync(RequestContext<CallToolRequestParams> request, CancellationToken cancellationToken = default);
+    public abstract ValueTask<CallToolResult> CallToolsAsync(CallToolRequestParams? callToolRequestParams, CancellationToken cancellationToken = default);
+
+    /// <inheritdoc/>
+    public virtual async ValueTask<CallToolResult> CallToolsAsync(RequestContext<CallToolRequestParams> request, CancellationToken cancellationToken = default)
+    {
+        return await this.CallToolsAsync(request.Params, cancellationToken);
+    }
 
     /// <summary>
     /// 释放资源

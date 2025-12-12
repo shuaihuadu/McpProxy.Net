@@ -18,13 +18,13 @@ public class NamedMcpServerInfo
     /// Gets a description of the server's purpose or capabilities.
     /// </summary>
     [JsonPropertyName("description")]
-    public string? Description { get; init; }
+    public string? Description { get; set; }
 
     /// <summary>
     /// Gets the user-friendly title for the server.
     /// </summary>
     [JsonPropertyName("title")]
-    public string? Title { get; init; }
+    public string? Title { get; set; }
 
     /// <summary>
     /// 获取或设置服务器是否被禁用

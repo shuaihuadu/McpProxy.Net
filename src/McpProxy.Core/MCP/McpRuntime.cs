@@ -18,11 +18,11 @@ public class McpRuntime : IMcpRuntime
     }
 
     /// <inheritdoc />
-    public async ValueTask<ListToolsResult> ListToolsHandler(RequestContext<ListToolsRequestParams> request, CancellationToken cancellationToken = default)
+    public async ValueTask<ListToolsResult> ListToolsHandler(RequestContext<ListToolsRequestParams>? request, CancellationToken cancellationToken = default)
     {
         try
         {
-            ListToolsResult result = await this._toolsHandler.ListToolsAsync(request, cancellationToken);
+            ListToolsResult result = await this._toolsHandler.ListToolsAsync(default, cancellationToken);
 
             return result;
         }
@@ -50,9 +50,29 @@ public class McpRuntime : IMcpRuntime
             };
         }
 
+        return await this.CallToolHandler(request.Params, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<CallToolResult> CallToolHandler(CallToolRequestParams callToolRequestParams, CancellationToken cancellationToken = default)
+    {
+        if (callToolRequestParams == null)
+        {
+            var content = new TextContentBlock
+            {
+                Text = "Cannot call tools with null parameters.",
+            };
+
+            return new CallToolResult
+            {
+                Content = [content],
+                IsError = true,
+            };
+        }
+
         try
         {
-            return await this._toolsHandler.CallToolsAsync(request, cancellationToken);
+            return await this._toolsHandler.CallToolsAsync(callToolRequestParams, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {

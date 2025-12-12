@@ -176,6 +176,5 @@ namespace McpProxy.Core.UnitTests
 
             Assert.IsNotNull(client);
         }
-
     }
 }

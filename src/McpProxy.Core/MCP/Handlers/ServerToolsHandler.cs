@@ -1,7 +1,7 @@
 ﻿namespace McpProxy;
 
 /// <summary>
-/// ServerToolsHandler 从mcp.json配置的MCP服务器加载工具并通过MCP服务器公开工具
+/// ServerToolsHandler 使用指定的MCP服务器发现策略加载工具并通过MCP服务器公开工具
 /// </summary>
 public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscoveryStrategy, ILogger<ServerToolsHandler> logger) : BaseMcpToolsHandler(logger)
 {
@@ -19,7 +19,7 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
     public McpClientOptions ClientOptions { get; set; } = new McpClientOptions();
 
     /// <inheritdoc/>
-    public override async ValueTask<ListToolsResult> ListToolsAsync(RequestContext<ListToolsRequestParams> request, CancellationToken cancellationToken = default)
+    public override async ValueTask<ListToolsResult> ListToolsAsync(string? mcpServerName = "", CancellationToken cancellationToken = default)
     {
         await this.InitializeAsync(cancellationToken);
 
@@ -28,7 +28,14 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
             Tools = []
         };
 
-        foreach (McpClient mcpClient in this._discoveredClients)
+        List<McpClient> clientList = this._discoveredClients;
+
+        if (!string.IsNullOrWhiteSpace(mcpServerName))
+        {
+            clientList = [.. this._discoveredClients.Where(c => string.Equals(c.ServerInfo.Name, mcpServerName))];
+        }
+
+        foreach (McpClient mcpClient in clientList)
         {
             IList<McpClientTool> toolResult = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken);
 
@@ -45,9 +52,9 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
     }
 
     /// <inheritdoc/>
-    public override async ValueTask<CallToolResult> CallToolsAsync(RequestContext<CallToolRequestParams> request, CancellationToken cancellationToken = default)
+    public override async ValueTask<CallToolResult> CallToolsAsync(CallToolRequestParams? callToolRequestParams, CancellationToken cancellationToken = default)
     {
-        if (request.Params == null)
+        if (callToolRequestParams == null)
         {
             TextContentBlock content = new()
             {
@@ -66,11 +73,11 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
         // 初始化工具客户端映射，如果尚未初始化
         await this.InitializeAsync(cancellationToken);
 
-        if (!_toolClientMap.TryGetValue(request.Params.Name, out var toolClient) || toolClient.Client is null)
+        if (!_toolClientMap.TryGetValue(callToolRequestParams.Name, out var toolClient) || toolClient.Client is null)
         {
             TextContentBlock content = new()
             {
-                Text = $"Tool '{request.Params.Name}' not found in the configured server.",
+                Text = $"Tool '{callToolRequestParams.Name}' not found in the configured server.",
             };
 
             _logger.LogWarning(content.Text);
@@ -82,9 +89,9 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
             };
         }
 
-        Dictionary<string, object?> parameters = TransformArgumentsToDictionary(request.Params.Arguments);
+        Dictionary<string, object?> parameters = TransformArgumentsToDictionary(callToolRequestParams.Arguments);
 
-        return await toolClient.Client.CallToolAsync(toolName: request.Params.Name, parameters, cancellationToken: cancellationToken);
+        return await toolClient.Client.CallToolAsync(toolName: callToolRequestParams.Name, parameters, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -93,7 +100,7 @@ public sealed class ServerToolsHandler(IMcpServerDiscoveryStrategy serverDiscove
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    private static Dictionary<string, object?> TransformArgumentsToDictionary(IReadOnlyDictionary<string, JsonElement>? args)
+    private static Dictionary<string, object?> TransformArgumentsToDictionary(IDictionary<string, JsonElement>? args)
     {
         if (args is null)
         {

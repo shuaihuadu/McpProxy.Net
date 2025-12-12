@@ -1,7 +1,8 @@
 ﻿<Project>
 	<PropertyGroup>
 		<!-- Central version prefix - applies to all nuget packages. -->
-		<VersionPrefix>0.0.3</VersionPrefix>
+		<VersionPrefix>0.0.5</VersionPrefix>
+		<VersionSuffix>preview</VersionSuffix>
 
 		<PackageVersion Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</PackageVersion>
 		<PackageVersion Condition="'$(VersionSuffix)' == ''">$(VersionPrefix)</PackageVersion>
@@ -51,7 +52,8 @@
 
 		<!-- Include the XML documentation file in the NuGet package. -->
 		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-	</PropertyGroup>
+	
+</PropertyGroup>
 
 	<ItemGroup>
 		<!-- Include icon.png and NUGET.md in the project. -->

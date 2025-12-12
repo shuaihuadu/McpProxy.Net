@@ -8,9 +8,9 @@ public interface IMcpToolsHandler : IAsyncDisposable
     /// <summary>
     /// 处理列出MCP服务器中所有可用工具的请求
     /// </summary>
-    /// <param name="request">列出工具的请求上下文</param>
+    /// <param name="mcpServerName">需要列出的工具的MCP服务器</param>
     /// <param name="cancellationToken">取消令牌</param>
-    ValueTask<ListToolsResult> ListToolsAsync(RequestContext<ListToolsRequestParams> request, CancellationToken cancellationToken = default);
+    ValueTask<ListToolsResult> ListToolsAsync(string? mcpServerName = "", CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 处理调用MCP服务器中特定工具的请求
@@ -18,4 +18,11 @@ public interface IMcpToolsHandler : IAsyncDisposable
     /// <param name="request">调用工具的请求上下文</param>
     /// <param name="cancellationToken">取消令牌</param>
     ValueTask<CallToolResult> CallToolsAsync(RequestContext<CallToolRequestParams> request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 处理调用MCP服务器中特定工具的请求
+    /// </summary>
+    /// <param name="callToolRequestParams">调用工具的参数</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    ValueTask<CallToolResult> CallToolsAsync(CallToolRequestParams? callToolRequestParams, CancellationToken cancellationToken = default);
 }
