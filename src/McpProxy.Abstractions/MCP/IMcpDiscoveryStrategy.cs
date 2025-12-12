@@ -1,34 +1,34 @@
 ﻿namespace McpProxy;
 
 /// <summary>
-/// Provider MCP server discovery strategies.
+/// 定义MCP服务器发现策略的接口
 /// </summary>
 public interface IMcpServerDiscoveryStrategy : IAsyncDisposable
 {
     /// <summary>
-    /// Discovers available MCP servers via this strategy.
+    /// 通过此策略发现可用的MCP服务器
     /// </summary>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>A collection of discovered MCP servers.</returns>
+    /// <param name="cancellationToken">取消令牌，用于取消异步操作</param>
+    /// <returns>已发现的MCP服务器集合</returns>
     Task<IEnumerable<IMcpServerProvider>> DiscoverServersAsync(CancellationToken cancellationToken);
 
     /// <summary>
-    /// Finds a server provider by name.
+    /// 根据名称查找服务器提供者
     /// </summary>
-    /// <param name="name">The name of the server to find.</param>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The server provider if found.</returns>
-    /// <exception cref="KeyNotFoundException">Thrown when no server with the specified name is found.</exception>
+    /// <param name="name">要查找的服务器名称</param>
+    /// <param name="cancellationToken">取消令牌，用于取消异步操作</param>
+    /// <returns>如果找到则返回服务器提供者</returns>
+    /// <exception cref="KeyNotFoundException">当未找到指定名称的服务器时抛出</exception>
     Task<IMcpServerProvider> FindServerProviderAsync(string name, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Gets an MCP client for the specified server.
+    /// 获取指定服务器的MCP客户端
     /// </summary>
-    /// <param name="name">The name of the server to get a client for.</param>
-    /// <param name="clientOptions">Optional client configuration options. If null, default options are used.</param>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>An MCP client that can communicate with the specified server.</returns>
-    /// <exception cref="KeyNotFoundException">Thrown when no server with the specified name is found.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when the name parameter is null.</exception>
+    /// <param name="name">要获取客户端的服务器名称</param>
+    /// <param name="clientOptions">可选的客户端配置选项。如果为null，则使用默认选项</param>
+    /// <param name="cancellationToken">取消令牌，用于取消异步操作</param>
+    /// <returns>可与指定服务器通信的MCP客户端</returns>
+    /// <exception cref="KeyNotFoundException">当未找到指定名称的服务器时抛出</exception>
+    /// <exception cref="ArgumentNullException">当name参数为null时抛出</exception>
     Task<McpClient> GetOrCreateClientAsync(string name, McpClientOptions? clientOptions = null, CancellationToken cancellationToken = default);
 }

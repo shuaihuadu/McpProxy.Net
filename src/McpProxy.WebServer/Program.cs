@@ -1,4 +1,4 @@
-using McpProxy;
+﻿using McpProxy;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using System.Reflection;
@@ -32,7 +32,7 @@ builder.Services.AddOptions<McpServerOptions>().Configure<IMcpRuntime>((mcpServe
     mcpServerOptions.Handlers = new()
     {
         CallToolHandler = mcpRuntime.CallToolHandler,
-        ListToolsHandler = mcpRuntime.ListToolsHandler,
+        ListToolsHandler = mcpRuntime.ListToolsHandler
     };
 
     // TODO: Load from configuration or external source
