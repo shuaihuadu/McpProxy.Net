@@ -1,4 +1,4 @@
-﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+// Copyright (c) ShuaiHua Du. All rights reserved.
 
 namespace McpProxy;
 
@@ -209,4 +209,35 @@ public interface IMcpProxyService : IAsyncDisposable
     ValueTask UnsubscribeResourceAsync(
         UnsubscribeRequestParams unsubscribeRequestParams,
         CancellationToken cancellationToken = default);
+
+    // ========== 生命周期管理 ==========
+
+    /// <summary>
+    /// 刷新服务缓存
+    /// 重新发现服务器，重建工具、提示词和资源的映射关系
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌，用于取消异步操作</param>
+    /// <returns>表示异步刷新操作的任务</returns>
+    /// <remarks>
+    /// 适用场景：
+    /// - 配置文件或数据库更改后
+    /// - 用户手动触发刷新
+    /// - 检测到服务器列表变化
+    /// </remarks>
+    Task RefreshAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 获取服务状态信息
+    /// 返回当前服务的初始化状态、服务器数量、工具/提示词/资源统计等信息
+    /// </summary>
+    /// <returns>服务状态信息对象</returns>
+    ServiceStatusInfo GetStatus();
+
+    /// <summary>
+    /// 验证所有服务器连接的健康状态
+    /// 检查每个服务器是否正常连接，不重新初始化
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌，用于取消异步操作</param>
+    /// <returns>健康检查结果，包含所有服务器的健康状态</returns>
+    Task<HealthCheckResult> ValidateAsync(CancellationToken cancellationToken = default);
 }

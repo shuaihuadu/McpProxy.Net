@@ -1,4 +1,4 @@
-﻿namespace McpProxy;
+namespace McpProxy;
 
 /// <summary>
 /// 定义模型上下文协议（MCP）运行时的核心功能
@@ -83,4 +83,29 @@ public interface IMcpRuntime : IAsyncDisposable
     /// <param name="cancellationToken">用于监视取消请求的令牌</param>
     /// <returns>表示异步操作的任务</returns>
     ValueTask UnsubscribeResourceHandler(RequestContext<UnsubscribeRequestParams> request, CancellationToken cancellationToken = default);
+
+    // ========== 生命周期管理 ==========
+
+    /// <summary>
+    /// 刷新底层代理服务的缓存
+    /// 委托给 IMcpProxyService.RefreshAsync()
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌，用于取消异步操作</param>
+    /// <returns>表示异步刷新操作的任务</returns>
+    Task RefreshAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 获取服务状态信息
+    /// 委托给 IMcpProxyService.GetStatus()
+    /// </summary>
+    /// <returns>服务状态信息对象</returns>
+    ServiceStatusInfo GetStatus();
+
+    /// <summary>
+    /// 验证所有服务器连接的健康状态
+    /// 委托给 IMcpProxyService.ValidateAsync()
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌，用于取消异步操作</param>
+    /// <returns>健康检查结果</returns>
+    Task<HealthCheckResult> ValidateAsync(CancellationToken cancellationToken = default);
 }

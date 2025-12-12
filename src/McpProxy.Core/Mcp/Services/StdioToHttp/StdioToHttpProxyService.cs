@@ -1,4 +1,4 @@
-﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+// Copyright (c) ShuaiHua Du. All rights reserved.
 
 namespace McpProxy;
 
@@ -44,6 +44,16 @@ public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDi
     /// 标识是否已完成初始化
     /// </summary>
     private bool _isInitialized = false;
+
+    /// <summary>
+    /// 获取最后一次初始化的时间
+    /// </summary>
+    private DateTime? _lastInitializedAt = null;
+
+    /// <summary>
+    /// 刷新计数器，用于日志和调试
+    /// </summary>
+    private int _refreshCount = 0;
 
     /// <summary>
     /// 获取或设置创建MCP客户端时使用的客户端选项
@@ -430,6 +440,14 @@ public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDi
 
             // 标记初始化完成
             this._isInitialized = true;
+            this._lastInitializedAt = DateTime.UtcNow;
+            
+            this._logger.LogInformation(
+                "Initialization completed. Discovered {ServerCount} servers, {ToolCount} tools, {PromptCount} prompts, {ResourceCount} resources.",
+                this._discoveredClients.Count,
+                this._toolClientMap.Count,
+                this._promptClientMap.Count,
+                this._resourceClientMap.Count);
         }
         finally
         {
@@ -517,6 +535,144 @@ public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDi
         {
             this._logger.LogWarning(ex, "Failed to initialize resources from server {ServerName}", serverName);
         }
+    }
+
+    // ========== 生命周期管理实现 ==========
+
+    /// <inheritdoc/>
+    public override Task RefreshAsync(CancellationToken cancellationToken = default)
+    {
+        return this.RefreshInternalAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// 内部刷新实现
+    /// 清空现有缓存并重新初始化所有映射
+    /// </summary>
+    private async Task RefreshInternalAsync(CancellationToken cancellationToken)
+    {
+        int refreshNumber = Interlocked.Increment(ref this._refreshCount);
+        
+        this._logger.LogInformation("Starting cache refresh operation #{RefreshCount}...", refreshNumber);
+
+        await this._initializationSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            // 1. 标记为未初始化
+            this._isInitialized = false;
+
+            this._logger.LogDebug("Clearing internal caches...");
+
+            // 2. 清空所有缓存映射
+            this._toolClientMap.Clear();
+            this._promptClientMap.Clear();
+            this._resourceClientMap.Clear();
+
+            // 3. 清空客户端列表
+            this._discoveredClients.Clear();
+
+            // 4. 重新初始化（重用现有的初始化逻辑）
+            await this.InitializeAsync(cancellationToken).ConfigureAwait(false);
+
+            this._logger.LogInformation(
+                "Cache refresh #{RefreshCount} completed successfully. " +
+                "Discovered {ServerCount} servers, {ToolCount} tools, {PromptCount} prompts, {ResourceCount} resources.",
+                refreshNumber,
+                this._discoveredClients.Count,
+                this._toolClientMap.Count,
+                this._promptClientMap.Count,
+                this._resourceClientMap.Count);
+        }
+        catch (Exception ex)
+        {
+            this._logger.LogError(ex, "Error occurred during cache refresh #{RefreshCount}", refreshNumber);
+            throw;
+        }
+        finally
+        {
+            this._initializationSemaphore.Release();
+        }
+    }
+
+    /// <inheritdoc/>
+    public override ServiceStatusInfo GetStatus()
+    {
+        return new ServiceStatusInfo
+        {
+            IsInitialized = this._isInitialized,
+            LastInitializedAt = this._lastInitializedAt,
+            TotalServers = this._discoveredClients.Count,
+            TotalTools = this._toolClientMap.Count,
+            TotalPrompts = this._promptClientMap.Count,
+            TotalResources = this._resourceClientMap.Count,
+            ServerNames = this._discoveredClients.Select(c => c.ServerInfo.Name).ToList()
+        };
+    }
+
+    /// <inheritdoc/>
+    public override async Task<HealthCheckResult> ValidateAsync(CancellationToken cancellationToken = default)
+    {
+        this._logger.LogInformation("Starting health check for {ServerCount} servers...", this._discoveredClients.Count);
+
+        var serverHealths = new Dictionary<string, ServerHealth>();
+        int healthyCount = 0;
+        int unhealthyCount = 0;
+        DateTime checkTime = DateTime.UtcNow;
+
+        foreach (McpClient client in this._discoveredClients)
+        {
+            string serverName = client.ServerInfo.Name;
+            
+            try
+            {
+                // 尝试调用一个简单的操作来验证连接
+                // 使用 ListToolsAsync 作为健康检查，因为它是最基础的操作
+                _ = await client.ListToolsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                serverHealths[serverName] = new ServerHealth
+                {
+                    ServerName = serverName,
+                    IsConnected = true,
+                    ErrorMessage = null,
+                    LastCheckTime = checkTime
+                };
+
+                healthyCount++;
+
+                this._logger.LogDebug("Server {ServerName} is healthy", serverName);
+            }
+            catch (Exception ex)
+            {
+                serverHealths[serverName] = new ServerHealth
+                {
+                    ServerName = serverName,
+                    IsConnected = false,
+                    ErrorMessage = ex.Message,
+                    LastCheckTime = checkTime
+                };
+
+                unhealthyCount++;
+
+                this._logger.LogWarning(ex, "Server {ServerName} health check failed", serverName);
+            }
+        }
+
+        bool isHealthy = unhealthyCount == 0 && healthyCount > 0;
+
+        this._logger.LogInformation(
+            "Health check completed. Healthy: {HealthyCount}, Unhealthy: {UnhealthyCount}, Overall: {OverallStatus}",
+            healthyCount,
+            unhealthyCount,
+            isHealthy ? "Healthy" : "Unhealthy");
+
+        return new HealthCheckResult
+        {
+            IsHealthy = isHealthy,
+            HealthyServers = healthyCount,
+            UnhealthyServers = unhealthyCount,
+            ServerHealths = serverHealths
+        };
     }
 
     /// <summary>

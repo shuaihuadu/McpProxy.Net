@@ -1,4 +1,4 @@
-﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+// Copyright (c) ShuaiHua Du. All rights reserved.
 
 namespace McpProxy;
 
@@ -210,13 +210,43 @@ public abstract class BaseStdioToHttpProxyService(ILogger logger) : IMcpProxySer
         await this.UnsubscribeResourceAsync(request.Params!, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 取消订阅资源更新通知（使用参数对象）
+    /// </summary>
+    /// <param name="unsubscribeRequestParams">取消订阅请求参数，包含要取消订阅的资源URI</param>
+    /// <param name="cancellationToken">取消令牌，用于取消异步操作</param>
+    /// <returns>表示异步操作的任务</returns>
     public virtual ValueTask UnsubscribeResourceAsync(
         UnsubscribeRequestParams unsubscribeRequestParams,
         CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException("Resources取消订阅功能尚未在此处理器中实现");
     }
+
+    // ========== 生命周期管理（抽象方法）==========
+
+    /// <summary>
+    /// 刷新服务缓存
+    /// 派生类必须实现此方法以重新发现服务器并重建映射
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>表示异步刷新操作的任务</returns>
+    public abstract Task RefreshAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 获取服务状态信息
+    /// 派生类必须实现此方法以返回当前状态
+    /// </summary>
+    /// <returns>服务状态信息对象</returns>
+    public abstract ServiceStatusInfo GetStatus();
+
+    /// <summary>
+    /// 验证所有服务器连接的健康状态
+    /// 派生类必须实现此方法以检查服务器健康状态
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>健康检查结果</returns>
+    public abstract Task<HealthCheckResult> ValidateAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 释放对象使用的所有资源

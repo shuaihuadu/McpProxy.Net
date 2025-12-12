@@ -1,4 +1,4 @@
-﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+// Copyright (c) ShuaiHua Du. All rights reserved.
 
 namespace McpProxy;
 
@@ -339,6 +339,66 @@ public class McpRuntime : IMcpRuntime
         {
             // 记录错误并重新抛出异常
             this._logger.LogError(ex, "Error occurred while unsubscribing from resource '{ResourceUri}'.", request.Params?.Uri);
+            throw;
+        }
+    }
+
+    // ========== 生命周期管理实现 ==========
+
+    /// <inheritdoc />
+    public async Task RefreshAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            this._logger.LogInformation("Refreshing MCP runtime...");
+
+            // 委托给底层代理服务
+            await this._proxyService.RefreshAsync(cancellationToken).ConfigureAwait(false);
+
+            this._logger.LogInformation("MCP runtime refreshed successfully.");
+        }
+        catch (Exception ex)
+        {
+            this._logger.LogError(ex, "Error occurred while refreshing MCP runtime.");
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public ServiceStatusInfo GetStatus()
+    {
+        try
+        {
+            // 委托给底层代理服务
+            return this._proxyService.GetStatus();
+        }
+        catch (Exception ex)
+        {
+            this._logger.LogError(ex, "Error occurred while getting MCP runtime status.");
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<HealthCheckResult> ValidateAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            this._logger.LogInformation("Validating MCP runtime health...");
+
+            // 委托给底层代理服务
+            HealthCheckResult result = await this._proxyService.ValidateAsync(cancellationToken).ConfigureAwait(false);
+
+            this._logger.LogInformation(
+                "MCP runtime health check completed. Healthy: {HealthyCount}, Unhealthy: {UnhealthyCount}",
+                result.HealthyServers,
+                result.UnhealthyServers);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            this._logger.LogError(ex, "Error occurred while validating MCP runtime health.");
             throw;
         }
     }
