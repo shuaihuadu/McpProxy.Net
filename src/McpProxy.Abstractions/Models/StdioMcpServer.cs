@@ -1,4 +1,6 @@
-﻿namespace McpProxy;
+﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+
+namespace McpProxy;
 
 /// <summary>
 /// 包含在mcp.json中定义的MCP服务器的配置信息

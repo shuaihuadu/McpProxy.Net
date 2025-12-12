@@ -1,9 +1,11 @@
-﻿namespace McpProxy;
+﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+
+namespace McpProxy;
 
 /// <summary>
 /// 定义了MCP服务器中工具操作相关的接口，主要负责发现、列出和调用工具
 /// </summary>
-public interface IMcpToolsHandler : IAsyncDisposable
+public interface IStdioToStreamableHttpService : IAsyncDisposable
 {
     /// <summary>
     /// 处理列出MCP服务器中所有可用工具的请求

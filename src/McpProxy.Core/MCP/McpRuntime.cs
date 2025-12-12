@@ -9,7 +9,7 @@ public class McpRuntime : IMcpRuntime
     /// <summary>
     /// 获取MCP工具处理器实例
     /// </summary>
-    private readonly IMcpToolsHandler _toolsHandler;
+    private readonly IStdioToStreamableHttpService _toolsHandler;
 
     /// <summary>
     /// 获取日志记录器实例
@@ -22,7 +22,7 @@ public class McpRuntime : IMcpRuntime
     /// <param name="toolsHandler">MCP工具处理器实例</param>
     /// <param name="logger">日志记录器实例</param>
     /// <exception cref="ArgumentNullException">当toolsHandler或logger为null时抛出</exception>
-    public McpRuntime(IMcpToolsHandler toolsHandler, ILogger<McpRuntime> logger)
+    public McpRuntime(IStdioToStreamableHttpService toolsHandler, ILogger<McpRuntime> logger)
     {
         this._toolsHandler = toolsHandler ?? throw new ArgumentNullException(nameof(toolsHandler));
         this._logger = logger ?? throw new ArgumentNullException(nameof(logger));

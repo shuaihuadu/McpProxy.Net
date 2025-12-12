@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add mcp server configuration
 builder.Configuration.AddJsonFile("mcp.json", optional: false, reloadOnChange: true);
 
-builder.Services.AddSingleton<IMcpToolsHandler, ServerToolsHandler>();
+builder.Services.AddSingleton<IStdioToStreamableHttpService, ServerToolsHandler>();
 
 builder.Services.AddSingleton<IMcpServerDiscoveryStrategy, ConfigurationServerDiscoveryStrategy>();
 

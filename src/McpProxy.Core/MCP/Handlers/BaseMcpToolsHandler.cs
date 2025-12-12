@@ -4,7 +4,7 @@
 /// MCP工具处理器的基类，提供通用功能，包括资源释放模式和客户端选项创建
 /// </summary>
 /// <param name="logger">日志记录器实例</param>
-public abstract class BaseMcpToolsHandler(ILogger logger) : IMcpToolsHandler
+public abstract class BaseMcpToolsHandler(ILogger logger) : IStdioToStreamableHttpService
 {
     /// <summary>
     /// 获取日志记录器实例
