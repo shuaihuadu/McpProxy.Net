@@ -5,5 +5,5 @@
   <ItemGroup>
     <ProjectReference Include="..\McpProxy.Core\McpProxy.Core.csproj" PrivateAssets="none" />
   </ItemGroup>
-	<Import Project="$(SolutionDir)/NuGet.props" />
+  <Import Project="$(SolutionDir)/nuget/NuGet.props" />
 </Project>

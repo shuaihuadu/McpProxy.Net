@@ -11,7 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		Directory.Build.props = Directory.Build.props
 		Directory.Packages.props = Directory.Packages.props
-		NuGet.props = NuGet.props
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -34,6 +33,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpProxy.ServiceDefaults", "src\aspire\McpProxy.ServiceDefaults\McpProxy.ServiceDefaults.csproj", "{ECBD05E0-B91B-4937-0AF2-6BAB23E7C266}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpProxy.MetaPackage", "src\McpProxy.MetaPackage\McpProxy.MetaPackage.csproj", "{8E1C4A7B-1338-4024-AE55-DAF250BDF3B7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{2B7038CC-6B6A-4A38-A538-D0B527CA14BE}"
+	ProjectSection(SolutionItems) = preProject
+		nuget\icon.png = nuget\icon.png
+		nuget\NuGet.props = nuget\NuGet.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -82,6 +87,7 @@ Global
 		{A348BD18-767F-5355-FBC8-7E34C6BB91F0} = {3B070651-BF5B-4EB6-A064-CA848C047A38}
 		{ECBD05E0-B91B-4937-0AF2-6BAB23E7C266} = {3B070651-BF5B-4EB6-A064-CA848C047A38}
 		{8E1C4A7B-1338-4024-AE55-DAF250BDF3B7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{2B7038CC-6B6A-4A38-A538-D0B527CA14BE} = {8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3762C1EE-D2A2-4E4F-B877-854E82691BC3}

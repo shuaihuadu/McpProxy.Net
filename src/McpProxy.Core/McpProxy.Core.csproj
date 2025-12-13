@@ -9,7 +9,7 @@
 		<PackageReference Include="ModelContextProtocol.Core" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\McpProxy.Abstractions\McpProxy.Abstractions.csproj" />
+	  <ProjectReference Include="..\McpProxy.Abstractions\McpProxy.Abstractions.csproj" />
 	</ItemGroup>
-	<Import Project="$(SolutionDir)/NuGet.props" />
+	<Import Project="$(SolutionDir)/nuget/NuGet.props" />
 </Project>
