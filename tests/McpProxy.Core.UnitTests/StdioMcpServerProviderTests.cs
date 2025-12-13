@@ -1,4 +1,4 @@
-﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+// Copyright (c) ShuaiHua Du. All rights reserved.
 
 namespace McpProxy.Core.UnitTests;
 
@@ -191,7 +191,7 @@ public sealed class StdioMcpServerProviderTests
     /// 测试CreateClientAsync在命令为空时抛出InvalidOperationException
     /// </summary>
     [TestMethod]
-    public async Task CreateClientAsync_WithEmptyCommand_ThrowsInvalidOperationException()
+    public async Task CreateClientAsync_WithEmptyCommand_ThrowsInvalidOperationExceptionAsync()
     {
         // Arrange
         string testId = "invalidProvider";
@@ -206,14 +206,14 @@ public sealed class StdioMcpServerProviderTests
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => provider.CreateClientAsync(new McpClientOptions(), this.TestContext.CancellationToken));
 
-        Assert.IsTrue(exception.Message.Contains("does not have a valid command for stdio transport"));
+        Assert.Contains("does not have a valid command for stdio transport", exception.Message);
     }
 
     /// <summary>
     /// 测试CreateClientAsync在命令为null时抛出InvalidOperationException
     /// </summary>
     [TestMethod]
-    public async Task CreateClientAsync_WithNullCommand_ThrowsInvalidOperationException()
+    public async Task CreateClientAsync_WithNullCommand_ThrowsInvalidOperationExceptionAsync()
     {
         // Arrange
         string testId = "invalidStdioProvider";
@@ -229,14 +229,14 @@ public sealed class StdioMcpServerProviderTests
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => provider.CreateClientAsync(new McpClientOptions(), this.TestContext.CancellationToken));
 
-        Assert.IsTrue(exception.Message.Contains("does not have a valid command for stdio transport"));
+        Assert.Contains("does not have a valid command for stdio transport", exception.Message);
     }
 
     /// <summary>
     /// 测试CreateClientAsync在环境变量存在时合并系统环境变量
     /// </summary>
     [TestMethod]
-    public async Task CreateClientAsync_WithEnvVariables_MergesWithSystemEnvironment()
+    public async Task CreateClientAsync_WithEnvVariables_MergesWithSystemEnvironmentAsync()
     {
         // Arrange
         string testId = "envProvider";
@@ -259,14 +259,14 @@ public sealed class StdioMcpServerProviderTests
         IOException exception = await Assert.ThrowsAsync<IOException>(
             () => provider.CreateClientAsync(new McpClientOptions(), this.TestContext.CancellationToken));
 
-        Assert.IsTrue(exception.Message.Contains("MCP server process exited unexpectedly"));
+        Assert.Contains("MCP server process exited unexpectedly", exception.Message);
     }
 
     /// <summary>
     /// 测试CreateClientAsync使用stdio类型创建客户端成功
     /// </summary>
     [TestMethod]
-    public async Task CreateClientAsync_WithStdioType_CreatesStdioClientSuccessfully()
+    public async Task CreateClientAsync_WithStdioType_CreatesStdioClientSuccessfullyAsync()
     {
         // Arrange
         string testId = "stdioProvider";
@@ -292,7 +292,7 @@ public sealed class StdioMcpServerProviderTests
     /// 测试CreateClientAsync使用自定义工作目录
     /// </summary>
     [TestMethod]
-    public async Task CreateClientAsync_WithCustomWorkingDirectory_ConfiguresCorrectly()
+    public async Task CreateClientAsync_WithCustomWorkingDirectory_ConfiguresCorrectlyAsync()
     {
         // Arrange
         string testId = "cwdProvider";
