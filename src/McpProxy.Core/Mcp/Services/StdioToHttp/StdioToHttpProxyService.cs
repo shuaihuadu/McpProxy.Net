@@ -385,63 +385,13 @@ public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDi
                 return;
             }
 
-            // 发现所有可用的MCP服务器
-            IEnumerable<IMcpServerProvider> servers = await this._serverDiscoveryStrategy.DiscoverServersAsync(cancellationToken).ConfigureAwait(false);
-
-            // 遍历每个服务器提供者
-            foreach (IMcpServerProvider server in servers)
-            {
-                // 创建服务器元数据
-                McpServerMetadata serverMetadata = server.CreateMetadata();
-
-                McpClient? mcpClient;
-
-                try
-                {
-                    // 尝试获取或创建MCP客户端
-                    mcpClient = await this._serverDiscoveryStrategy.GetOrCreateClientAsync(
-                        serverMetadata.Name,
-                        this.CreateClientOptions(serverMetadata.Name, serverMetadata.Title),
-                        cancellationToken
-                    ).ConfigureAwait(false);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    // 记录客户端创建失败，但继续处理其他服务器
-                    this._logger.LogWarning("Failed to create client for provider {ProviderName}: {Error}", serverMetadata.Name, ex.Message);
-                    continue;
-                }
-                catch (Exception ex)
-                {
-                    // 记录客户端启动失败，但继续处理其他服务器
-                    this._logger.LogWarning("Failed to start client for provider {ProviderName}: {Error}", serverMetadata.Name, ex.Message);
-                    continue;
-                }
-
-                // 验证客户端是否创建成功
-                if (mcpClient is null)
-                {
-                    this._logger.LogWarning("Failed to get MCP client for provider {ProviderName}.", serverMetadata.Name);
-                    continue;
-                }
-
-                // 缓存发现的MCP客户端
-                this._discoveredClients.Add(mcpClient);
-
-                // 初始化工具映射
-                await this.InitializeToolsAsync(mcpClient, serverMetadata.Name, cancellationToken).ConfigureAwait(false);
-
-                // 初始化提示词映射
-                await this.InitializePromptsAsync(mcpClient, serverMetadata.Name, cancellationToken).ConfigureAwait(false);
-
-                // 初始化资源映射
-                await this.InitializeResourcesAsync(mcpClient, serverMetadata.Name, cancellationToken).ConfigureAwait(false);
-            }
+            // 执行实际的初始化逻辑
+            await this.InitializeInternalAsync(cancellationToken).ConfigureAwait(false);
 
             // 标记初始化完成
             this._isInitialized = true;
             this._lastInitializedAt = DateTime.UtcNow;
-            
+
             this._logger.LogInformation(
                 "Initialization completed. Discovered {ServerCount} servers, {ToolCount} tools, {PromptCount} prompts, {ResourceCount} resources.",
                 this._discoveredClients.Count,
@@ -453,6 +403,81 @@ public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDi
         {
             // 释放信号量锁
             this._initializationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// 执行实际的初始化逻辑（不加锁）
+    /// 发现服务器并初始化工具、提示词和资源的映射关系
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌，用于取消异步操作</param>
+    /// <returns>表示异步初始化操作的任务</returns>
+    /// <remarks>
+    /// 此方法假定调用者已经获取了必要的锁，不执行任何锁定操作
+    /// </remarks>
+    private async Task InitializeInternalAsync(CancellationToken cancellationToken)
+    {
+        // 发现所有可用的MCP服务器
+        IEnumerable<IMcpServerProvider> servers = await this._serverDiscoveryStrategy.DiscoverServersAsync(cancellationToken).ConfigureAwait(false);
+
+        this._logger.LogDebug("Found {ServerCount} servers, starting initialization...", servers.Count());
+
+        // 遍历每个服务器提供者
+        foreach (IMcpServerProvider server in servers)
+        {
+            // 创建服务器元数据
+            McpServerMetadata serverMetadata = server.CreateMetadata();
+
+            McpClient? mcpClient;
+
+            try
+            {
+                this._logger.LogDebug("Creating client for server {ServerName}...", serverMetadata.Name);
+
+                // 尝试获取或创建MCP客户端
+                mcpClient = await this._serverDiscoveryStrategy.GetOrCreateClientAsync(
+                    serverMetadata.Name,
+                    this.CreateClientOptions(serverMetadata.Name, serverMetadata.Title),
+                    cancellationToken
+                ).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // 记录客户端创建失败，但继续处理其他服务器
+                this._logger.LogWarning("Failed to create client for provider {ProviderName}: {Error}", serverMetadata.Name, ex.Message);
+                continue;
+            }
+            catch (Exception ex)
+            {
+                // 记录客户端启动失败，但继续处理其他服务器
+                this._logger.LogWarning("Failed to start client for provider {ProviderName}: {Error}", serverMetadata.Name, ex.Message);
+                continue;
+            }
+
+            // 验证客户端是否创建成功
+            if (mcpClient is null)
+            {
+                this._logger.LogWarning("Failed to get MCP client for provider {ProviderName}.", serverMetadata.Name);
+                continue;
+            }
+
+            // 缓存发现的MCP客户端
+            this._discoveredClients.Add(mcpClient);
+
+            this._logger.LogDebug("Initializing tools for server {ServerName}...", serverMetadata.Name);
+
+            // 初始化工具映射
+            await this.InitializeToolsAsync(mcpClient, serverMetadata.Name, cancellationToken).ConfigureAwait(false);
+
+            this._logger.LogDebug("Initializing prompts for server {ServerName}...", serverMetadata.Name);
+
+            // 初始化提示词映射
+            await this.InitializePromptsAsync(mcpClient, serverMetadata.Name, cancellationToken).ConfigureAwait(false);
+
+            this._logger.LogDebug("Initializing resources for server {ServerName}...", serverMetadata.Name);
+
+            // 初始化资源映射
+            await this.InitializeResourcesAsync(mcpClient, serverMetadata.Name, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -552,7 +577,7 @@ public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDi
     private async Task RefreshInternalAsync(CancellationToken cancellationToken)
     {
         int refreshNumber = Interlocked.Increment(ref this._refreshCount);
-        
+
         this._logger.LogInformation("Starting cache refresh operation #{RefreshCount}...", refreshNumber);
 
         await this._initializationSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -572,8 +597,14 @@ public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDi
             // 3. 清空客户端列表
             this._discoveredClients.Clear();
 
-            // 4. 重新初始化（重用现有的初始化逻辑）
-            await this.InitializeAsync(cancellationToken).ConfigureAwait(false);
+            this._logger.LogDebug("Discovering servers for refresh #{RefreshCount}...", refreshNumber);
+
+            // 4. 重新初始化（复用 InitializeInternalAsync）
+            await this.InitializeInternalAsync(cancellationToken).ConfigureAwait(false);
+
+            // 5. 标记初始化完成
+            this._isInitialized = true;
+            this._lastInitializedAt = DateTime.UtcNow;
 
             this._logger.LogInformation(
                 "Cache refresh #{RefreshCount} completed successfully. " +
@@ -623,7 +654,7 @@ public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDi
         foreach (McpClient client in this._discoveredClients)
         {
             string serverName = client.ServerInfo.Name;
-            
+
             try
             {
                 // 尝试调用一个简单的操作来验证连接
