@@ -1,7 +1,8 @@
-// Copyright (c) ShuaiHua Du. All rights reserved.
+﻿// Copyright (c) ShuaiHua Du. All rights reserved.
 
 using System.Reflection;
 using McpProxy;
+using McpProxy.Services;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
@@ -15,6 +16,9 @@ builder.Services.AddSingleton<IMcpProxyService, StdioToHttpProxyService>();
 
 // Register MCP server discovery strategy
 builder.Services.AddSingleton<IMcpServerDiscoveryStrategy, ConfigurationServerDiscoveryStrategy>();
+
+// Register background service for pre-initialization
+builder.Services.AddHostedService<McpProxyInitializationService>();
 
 // Configure stdio MCP server options
 builder.Services.Configure<StdioMcpServersOptions>(builder.Configuration);

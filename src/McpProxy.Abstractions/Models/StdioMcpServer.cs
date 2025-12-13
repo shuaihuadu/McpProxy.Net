@@ -42,7 +42,7 @@ public class StdioMcpServer
     /// 获取或设置服务器传输类型（例如："stdio"）
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get; set; } = string.Empty;
+    public string Type { get; set; } = "stdio";
 
     /// <summary>
     /// 获取或设置超时时间（秒），默认为60秒
