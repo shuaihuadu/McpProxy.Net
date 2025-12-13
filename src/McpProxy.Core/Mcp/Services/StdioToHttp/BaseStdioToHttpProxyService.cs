@@ -1,4 +1,4 @@
-﻿// Copyright (c) ShuaiHua Du. All rights reserved.
+// Copyright (c) ShuaiHua Du. All rights reserved.
 
 namespace McpProxy;
 
@@ -238,7 +238,7 @@ public abstract class BaseStdioToHttpProxyService(ILogger logger) : IMcpProxySer
     /// 派生类必须实现此方法以返回当前状态
     /// </summary>
     /// <returns>服务状态信息对象</returns>
-    public abstract ServiceStatusInfo GetStatus();
+    public abstract ServiceStatus GetStatus();
 
     /// <summary>
     /// 验证所有服务器连接的健康状态

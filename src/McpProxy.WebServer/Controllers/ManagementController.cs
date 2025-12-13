@@ -38,14 +38,14 @@ public class ManagementController : ControllerBase
     /// </remarks>
     /// <response code="200">成功返回服务状态</response>
     [HttpGet("status")]
-    [ProducesResponseType(typeof(ServiceStatusInfo), StatusCodes.Status200OK)]
-    public ActionResult<ServiceStatusInfo> GetStatus()
+    [ProducesResponseType(typeof(ServiceStatus), StatusCodes.Status200OK)]
+    public ActionResult<ServiceStatus> GetStatus()
     {
         try
         {
             this._logger.LogInformation("Getting MCP service status");
 
-            ServiceStatusInfo status = this._proxyService.GetStatus();
+            ServiceStatus status = this._proxyService.GetStatus();
 
             return this.Ok(status);
         }
@@ -120,11 +120,11 @@ public class ManagementController : ControllerBase
         {
             this._logger.LogInformation("Starting manual refresh of MCP service");
 
-            ServiceStatusInfo beforeStatus = this._proxyService.GetStatus();
+            ServiceStatus beforeStatus = this._proxyService.GetStatus();
 
             await this._proxyService.RefreshAsync(cancellationToken);
 
-            ServiceStatusInfo afterStatus = this._proxyService.GetStatus();
+            ServiceStatus afterStatus = this._proxyService.GetStatus();
 
             this._logger.LogInformation(
                 "Refresh completed. Servers: {BeforeCount} → {AfterCount}, Tools: {BeforeTools} → {AfterTools}",
@@ -335,7 +335,7 @@ public class ManagementController : ControllerBase
         {
             this._logger.LogInformation("Getting complete debug information");
 
-            ServiceStatusInfo status = this._proxyService.GetStatus();
+            ServiceStatus status = this._proxyService.GetStatus();
             HealthCheckResult health = await this._proxyService.ValidateAsync(cancellationToken);
 
             var debugInfo = new

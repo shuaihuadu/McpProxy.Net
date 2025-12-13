@@ -627,9 +627,9 @@ public sealed class StdioToHttpProxyService(IMcpServerDiscoveryStrategy serverDi
     }
 
     /// <inheritdoc/>
-    public override ServiceStatusInfo GetStatus()
+    public override ServiceStatus GetStatus()
     {
-        return new ServiceStatusInfo
+        return new ServiceStatus
         {
             IsInitialized = this._isInitialized,
             LastInitializedAt = this._lastInitializedAt,

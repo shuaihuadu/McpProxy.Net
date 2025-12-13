@@ -231,7 +231,7 @@ public interface IMcpProxyService : IAsyncDisposable
     /// 返回当前服务的初始化状态、服务器数量、工具/提示词/资源统计等信息
     /// </summary>
     /// <returns>服务状态信息对象</returns>
-    ServiceStatusInfo GetStatus();
+    ServiceStatus GetStatus();
 
     /// <summary>
     /// 验证所有服务器连接的健康状态

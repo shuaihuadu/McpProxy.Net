@@ -6,7 +6,7 @@ namespace McpProxy;
 /// 服务状态信息
 /// 包含服务的初始化状态、服务器和资源统计信息
 /// </summary>
-public record ServiceStatusInfo
+public record ServiceStatus
 {
     /// <summary>
     /// 获取服务是否已初始化
@@ -42,5 +42,5 @@ public record ServiceStatusInfo
     /// <summary>
     /// 获取所有服务器名称的列表
     /// </summary>
-    public IReadOnlyList<string> ServerNames { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> ServerNames { get; init; } = [];
 }
