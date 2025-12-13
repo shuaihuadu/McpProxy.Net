@@ -1,4 +1,6 @@
-﻿namespace McpProxy;
+// Copyright (c) ShuaiHua Du. All rights reserved.
+
+namespace McpProxy;
 
 /// <summary>
 /// 从配置系统中发现MCP服务器

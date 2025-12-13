@@ -34,17 +34,26 @@ builder.Services.AddOptions<McpServerOptions>().Configure<IMcpProxyService>((mcp
 
     mcpServerOptions.Handlers = new()
     {
-        CallToolHandler = (request, cancellationToken) => proxyService.CallToolAsync(request, cancellationToken),
+        // Tools - 直接调用 IMcpProxyService 的 RequestContext 重载
+        CallToolHandler = (request, cancellationToken) =>
+            proxyService.CallToolAsync(request, cancellationToken),
 
-        ListToolsHandler = (request, cancellationToken) => proxyService.ListToolsAsync(request, cancellationToken),
+        ListToolsHandler = (request, cancellationToken) =>
+            proxyService.ListToolsAsync(request, cancellationToken),
 
-        GetPromptHandler = (request, cancellationToken) => proxyService.GetPromptAsync(request, cancellationToken),
+        // Prompts - 直接调用 IMcpProxyService 的 RequestContext 重载
+        GetPromptHandler = (request, cancellationToken) =>
+            proxyService.GetPromptAsync(request, cancellationToken),
 
-        ListPromptsHandler = (request, cancellationToken) => proxyService.ListPromptsAsync(request, cancellationToken),
+        ListPromptsHandler = (request, cancellationToken) =>
+            proxyService.ListPromptsAsync(request, cancellationToken),
 
-        ListResourcesHandler = (request, cancellationToken) => proxyService.ListResourcesAsync(request, cancellationToken),
+        // Resources - 直接调用 IMcpProxyService 的 RequestContext 重载
+        ListResourcesHandler = (request, cancellationToken) =>
+            proxyService.ListResourcesAsync(request, cancellationToken),
 
-        ReadResourceHandler = (request, cancellationToken) => proxyService.ReadResourceAsync(request, cancellationToken),
+        ReadResourceHandler = (request, cancellationToken) =>
+            proxyService.ReadResourceAsync(request, cancellationToken),
     };
 
     // TODO: Load from configuration or external source
@@ -53,10 +62,51 @@ builder.Services.AddOptions<McpServerOptions>().Configure<IMcpProxyService>((mcp
 
 builder.Services.AddMcpServer().WithHttpTransport();
 
+// Add Controllers and API Explorer
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+// Add Swagger for API documentation
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "MCP Proxy Management API",
+        Version = "v1",
+        Description = "MCP 服务器管理和监控 REST API",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "McpProxy.Net",
+            Url = new Uri("https://github.com/shuaihuadu/McpProxy.Net")
+        }
+    });
+
+    // Include XML comments if available
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+});
+
 //builder.Services.AddOpenTelemetry();
 
 var app = builder.Build();
 
+// Configure Swagger UI (available in all environments for debugging)
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "MCP Proxy Management API v1");
+    options.RoutePrefix = "swagger"; // Swagger UI at /swagger
+    options.DocumentTitle = "MCP Proxy Management API";
+});
+
+// Map MCP endpoint
 app.MapMcp("mcp");
+
+// Map Controllers
+app.MapControllers();
 
 app.Run();
